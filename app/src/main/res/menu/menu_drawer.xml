@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group
+        android:id="@+id/home_group_menu"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/homeFragment"
+            android:icon="@drawable/ic_home"
+            android:title="@string/home_fragment_title" />
+    </group>
+
+    <group
+        android:id="@+id/main_group_menu"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/profileFragment"
+            android:icon="@drawable/ic_profile"
+            android:title="@string/profile_fragment_title" />
+        <item
+            android:id="@+id/listProjectsFragment"
+            android:icon="@drawable/ic_projects"
+            android:title="@string/projects_fragment_title" />
+        <item
+            android:id="@+id/channelFragment"
+            android:icon="@drawable/ic_chats"
+            android:title="@string/channels_fragment_title" />
+    </group>
+
+    <group
+        android:id="@+id/logout_group_menu"
+        android:checkableBehavior="none">
+        <item
+            android:id="@+id/logout_menu"
+            android:icon="@drawable/ic_exit"
+            android:title="@string/log_out" />
+        <item
+            android:id="@+id/logout_everywhere_menu"
+            android:icon="@drawable/ic_logout_everywhere"
+            android:title="@string/log_out_everywhere" />
+    </group>
+
+    <item
+        android:id="@+id/dev_linkedin_menu"
+        android:icon="@drawable/ic_linkedin"
+        android:title="@string/linkdin" />
+    <item
+        android:id="@+id/dev_github_menu"
+        android:icon="@drawable/ic_github"
+        android:title="@string/github" />
+
+</menu>
