@@ -1,18 +1,14 @@
 package com.jorgetargz.projectseeker.network.interceptors
 
-import android.content.Context
-import com.jorgetargz.projectseeker.R
-import dagger.hilt.android.qualifiers.ApplicationContext
+import com.jorgetargz.projectseeker.network.commom.Config
 import okhttp3.Interceptor
 import okhttp3.Response
 import javax.inject.Inject
 
-class SkillsAuthInterceptor @Inject constructor(
-    @ApplicationContext private val context: Context
-) : Interceptor {
+class SkillsAuthInterceptor @Inject constructor() : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
-        val apiKey = context.resources.getString(R.string.skills_api_key)
+        val apiKey = Config.SKILLS_API_KEY
 
         val original = chain.request()
 

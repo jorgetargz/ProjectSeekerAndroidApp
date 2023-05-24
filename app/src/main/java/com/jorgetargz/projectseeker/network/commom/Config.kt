@@ -8,4 +8,6 @@ object Config {
     const val LOGIN_URL_SPRING_BOOT = "http://project-seeker.duckdns.org:8090/api/session/login"
 
     const val BASE_URL_SKILLS = "https://api.apilayer.com/skills/"
+    const val CHAT_CLIENT_API_KEY = "89j97up8e5a5"
+    const val SKILLS_API_KEY = "CPsTKozg7o7JkbmpZSixpB4c3O0nfQq0"
 }
