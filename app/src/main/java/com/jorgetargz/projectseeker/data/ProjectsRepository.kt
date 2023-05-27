@@ -39,6 +39,46 @@ class ProjectsRepository @Inject constructor(
         }
     }
 
+    fun getMyOpenProjects() : Flow<NetworkResult<List<Project>>> {
+        return flow {
+            emit(NetworkResult.Loading())
+            val result = projectsRemoteDataSource.getMyOpenProjects()
+            emit(result.map { response -> response.map { it.toProject() } })
+        }
+    }
+
+    fun getMyInProgressProjects() : Flow<NetworkResult<List<Project>>> {
+        return flow {
+            emit(NetworkResult.Loading())
+            val result = projectsRemoteDataSource.getMyInProgressProjects()
+            emit(result.map { response -> response.map { it.toProject() } })
+        }
+    }
+
+    fun getProjectsAssignedToMe() : Flow<NetworkResult<List<Project>>> {
+        return flow {
+            emit(NetworkResult.Loading())
+            val result = projectsRemoteDataSource.getProjectsAssignedToMe()
+            emit(result.map { response -> response.map { it.toProject() } })
+        }
+    }
+
+    fun getProjectsWhereIHaveOffer() : Flow<NetworkResult<List<Project>>> {
+        return flow {
+            emit(NetworkResult.Loading())
+            val result = projectsRemoteDataSource.getProjectsWhereIHaveOffer()
+            emit(result.map { response -> response.map { it.toProject() } })
+        }
+    }
+
+    fun getOpenProjectsBySkills(skills: List<String>) : Flow<NetworkResult<List<Project>>> {
+        return flow {
+            emit(NetworkResult.Loading())
+            val result = projectsRemoteDataSource.getOpenProjectsBySkills(skills)
+            emit(result.map { response -> response.map { it.toProject() } })
+        }
+    }
+
     fun getProjectInfo(projectId: String) : Flow<NetworkResult<Project>> {
         return flow {
             emit(NetworkResult.Loading())

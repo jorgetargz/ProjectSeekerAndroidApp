@@ -60,6 +60,14 @@ class UsersRepository @Inject constructor(
         }.flowOn(Dispatchers.IO)
     }
 
+    fun deleteAccount() : Flow<NetworkResult<Unit>> {
+        return flow {
+            emit(NetworkResult.Loading())
+            val result = usersRemoteDataSource.deleteAccount()
+            emit(result)
+        }.flowOn(Dispatchers.IO)
+    }
+
     private fun profileNetworkResult(result: NetworkResult<ProfileDTO>) =
         result.map { result1 ->
             when (result1.activeRole) {

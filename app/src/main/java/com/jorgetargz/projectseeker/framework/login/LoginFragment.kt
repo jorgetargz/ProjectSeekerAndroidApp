@@ -11,9 +11,6 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.Identity
@@ -37,7 +34,6 @@ import com.jorgetargz.projectseeker.databinding.FragmentLoginBinding
 import com.jorgetargz.projectseeker.framework.common.BaseAuthFragment
 import com.jorgetargz.projectseeker.framework.main.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -46,14 +42,15 @@ import java.util.concurrent.TimeUnit
 class LoginFragment() : BaseAuthFragment() {
 
     // View Binding
-    private lateinit var binding: FragmentLoginBinding
+    private val binding: FragmentLoginBinding by lazy {
+        FragmentLoginBinding.inflate(layoutInflater)
+    }
 
     // View Models
     private val viewModel: LoginViewModel by viewModels()
 
     // Google One Tap
     private lateinit var oneTapClient: SignInClient
-    private lateinit var signInRequest: BeginSignInRequest
     private val oneTapSignInContract = registerForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
@@ -67,10 +64,12 @@ class LoginFragment() : BaseAuthFragment() {
                     viewModel.firebaseAuthWithGoogle(idToken)
                     Timber.d("Got ID token.")
                 }
+
                 password != null -> {
                     viewModel.firebaseAuthWithEmailAndPassword(username, password)
                     Timber.d("Got password.")
                 }
+
                 else -> {
                     // Shouldn't happen.
                     Timber.d("No ID token or password!")
@@ -80,9 +79,6 @@ class LoginFragment() : BaseAuthFragment() {
             Timber.d("One Tap Sign in failed.")
         }
     }
-
-    // Firebase Auth
-    private val firebaseAuth = FirebaseAuth.getInstance()
 
     // Google Sign In
     private lateinit var googleSignInClient: GoogleSignInClient
@@ -108,6 +104,7 @@ class LoginFragment() : BaseAuthFragment() {
 
     // Phone Sign in
     private lateinit var phone: String
+
     inner class PhoneLoginCallBacks : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
         override fun onVerificationCompleted(credential: PhoneAuthCredential) {
             viewModel.firebaseAuthWithPhoneAuthCredential(credential)
@@ -142,19 +139,16 @@ class LoginFragment() : BaseAuthFragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
-        binding = FragmentLoginBinding.inflate(layoutInflater)
+        observeViewModel()
 
         lockDrawer()
         hideTopBar()
 
         if (FirebaseAuth.getInstance().currentUser == null) googleOneTapInit()
-
         googleLoginButton()
         emailLoginButton()
         phoneLoginButton()
         singUpButton()
-
-        observeViewModel()
 
         return binding.root
     }
@@ -167,29 +161,25 @@ class LoginFragment() : BaseAuthFragment() {
     }
 
     private fun observeViewModel() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.firebaseUser.collect { user ->
-                    user?.let {
-                        viewModel.getIDTokenAndLogin()
-                        viewModel.firebaseUserHandled()
-                    }
+        observeStateFlowOnStarted {
+            viewModel.firebaseUser.collect { user ->
+                user?.let {
+                    viewModel.getIDTokenAndLogin()
+                    viewModel.firebaseUserHandled()
                 }
             }
         }
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.logged.collect { user ->
-                    user?.let {
-                        logInDone(it)
-                        viewModel.userLoggedHandled()
-                    }
+        observeStateFlowOnStarted {
+            viewModel.logged.collect { user ->
+                user?.let {
+                    logInDone(it)
+                    viewModel.userLoggedHandled()
                 }
             }
         }
-        observeLoading(viewModel)
-        observeErrorString(viewModel)
-        observeErrorResourceCode(viewModel)
+        observeLoading(viewModel.isLoading)
+        observeErrorString(viewModel.errorString) { viewModel.errorStringHandled() }
+        observeErrorResourceCode(viewModel.errorResourceCode) { viewModel.errorResourceCodeHandled() }
     }
 
     private fun lockDrawer() {
@@ -205,14 +195,11 @@ class LoginFragment() : BaseAuthFragment() {
 
     private fun googleOneTapInit() {
         oneTapClient = Identity.getSignInClient(binding.root.context)
-        signInRequest = BeginSignInRequest.builder().setGoogleIdTokenRequestOptions(
+        val signInRequest = BeginSignInRequest.builder().setGoogleIdTokenRequestOptions(
             BeginSignInRequest.GoogleIdTokenRequestOptions.builder().setSupported(true)
                 .setServerClientId(getString(R.string.default_web_client_id))
-                // Only show accounts previously used to sign in.
                 .setFilterByAuthorizedAccounts(false).build()
-        )
-            // Automatically sign in when exactly one credential is retrieved.
-            .setAutoSelectEnabled(false).build()
+        ).setAutoSelectEnabled(false).build()
 
         oneTapClient.beginSignIn(signInRequest).addOnSuccessListener { result ->
             try {
@@ -238,15 +225,31 @@ class LoginFragment() : BaseAuthFragment() {
         binding.mailLoginButton.setOnClickListener {
             MaterialAlertDialogBuilder(requireContext()).apply {
                 setView(R.layout.dialog_login_email)
-                setPositiveButton("Login") { dialog1, _ ->
+                setPositiveButton(getString(R.string.login)) { dialog1, _ ->
                     val dialog = dialog1 as Dialog
                     val email = dialog.findViewById<TextInputEditText>(R.id.etEmail).text.toString()
                     val password =
                         dialog.findViewById<TextInputEditText>(R.id.etPassword).text.toString()
                     viewModel.firebaseAuthWithEmailAndPassword(email, password)
                 }
-                setNegativeButton("Cancel") { dialog, _ ->
+                setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
                     dialog.dismiss()
+                }
+                setNeutralButton(getString(R.string.forgot_password)) { loginDialog, _ ->
+                    loginDialog.dismiss()
+                    MaterialAlertDialogBuilder(requireContext()).apply {
+                        setView(R.layout.dialog_change_password_by_email)
+                        setPositiveButton(getString(R.string.send_email)) { dialog1, _ ->
+                            val dialog = dialog1 as Dialog
+                            val email =
+                                dialog.findViewById<TextInputEditText>(R.id.etEmail).text.toString()
+                            viewModel.firebaseSendPasswordResetEmail(email)
+                        }
+                        setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
+                            dialog.dismiss()
+                        }
+                        show()
+                    }
                 }
                 show()
             }
@@ -296,7 +299,7 @@ class LoginFragment() : BaseAuthFragment() {
                 viewModel.firebaseAuthWithPhoneAuthCredential(credential)
             }
             .setNeutralButton("Resend code") { _, _ ->
-               resendVerificationCode(token)
+                resendVerificationCode(token)
             }
             .setNegativeButton("Cancel") { dialog, _ ->
                 dialog.dismiss()
@@ -305,7 +308,7 @@ class LoginFragment() : BaseAuthFragment() {
     }
 
     private fun sendVerificationCode() {
-        val options = PhoneAuthOptions.newBuilder(firebaseAuth)
+        val options = PhoneAuthOptions.newBuilder()
             .setPhoneNumber(phone)
             .setTimeout(60L, TimeUnit.SECONDS)
             .setActivity(requireActivity())
@@ -315,7 +318,7 @@ class LoginFragment() : BaseAuthFragment() {
     }
 
     private fun resendVerificationCode(token: PhoneAuthProvider.ForceResendingToken) {
-        val options = PhoneAuthOptions.newBuilder(firebaseAuth)
+        val options = PhoneAuthOptions.newBuilder()
             .setPhoneNumber(phone)
             .setTimeout(60L, TimeUnit.SECONDS)
             .setActivity(requireActivity())

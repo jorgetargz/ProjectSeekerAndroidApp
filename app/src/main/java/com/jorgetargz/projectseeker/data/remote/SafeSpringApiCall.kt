@@ -24,19 +24,19 @@ class SafeSpringApiCall @Inject constructor(
             response.errorBody()?.let {
                 val reader = JsonReader(it.charStream())
                 reader.isLenient = true
-                springErrorDTO = gson.fromJson(reader, SpringErrorDTO::class.java)
-                Timber.e(springErrorDTO.toString())
-                return NetworkResult.Error(springErrorDTO.message, springErrorDTO)
+                try {
+                    springErrorDTO = gson.fromJson(reader, SpringErrorDTO::class.java)
+                    Timber.e(springErrorDTO.toString())
+                    return NetworkResult.Error(springErrorDTO.message, springErrorDTO)
+                } catch (e: Exception) {
+                    Timber.e(response.errorBody().toString())
+                }
             }
             val errorMessage = response.message()
-            return error(errorMessage)
+            return NetworkResult.Error(errorMessage)
         } catch (e: Exception) {
             Timber.e(e.toString(), e)
-            return error(e.message ?: e.toString())
+            return NetworkResult.Error(e.message ?: e.toString())
         }
     }
-
-    private fun <T> error(errorMessage: String): NetworkResult<T> =
-        NetworkResult.Error("Api call failed $errorMessage")
-
 }

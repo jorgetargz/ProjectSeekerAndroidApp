@@ -149,4 +149,12 @@
     <string name="logout_exit_message">¿Estás seguro de que quieres cerrar sesión y salir de la aplicación?</string>
     <string name="logout_everywhere_title">Cerrar sesión en todas partes</string>
     <string name="logout_everywhere_message">¿Estás seguro de que quieres cerrar sesión en todas partes y salir de la aplicación?</string>
+    <string name="login">Iniciar sesion</string>
+    <string name="forgot_password">Recuperar contraseña</string>
+    <string name="change_password">Cambiar contraseña</string>
+    <string name="send_email">Enviar email</string>
+    <string name="email_sent">Email enviado</string>
+    <string name="email_not_verified">Email no verificado</string>
+    <string name="email_not_verified_message">Por favor verifica tu email</string>
+    <string name="resend_verification_email">Enviar email de verificacion</string>
 </resources>

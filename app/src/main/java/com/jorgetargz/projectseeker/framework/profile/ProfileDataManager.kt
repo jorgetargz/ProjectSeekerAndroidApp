@@ -18,4 +18,6 @@ class ProfileDataManager @Inject constructor(
 
     fun modifyClientProfile(modifyClientProfileDTO: ModifyClientProfileDTO) =
         usersRepository.modifyClientProfile(modifyClientProfileDTO)
+
+    fun deleteAccount() = usersRepository.deleteAccount()
 }

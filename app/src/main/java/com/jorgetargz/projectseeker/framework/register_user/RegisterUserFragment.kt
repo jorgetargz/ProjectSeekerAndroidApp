@@ -6,9 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import com.google.firebase.FirebaseException
 import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuth
@@ -21,7 +18,6 @@ import com.jorgetargz.projectseeker.R
 import com.jorgetargz.projectseeker.databinding.FragmentRegisterUserBinding
 import com.jorgetargz.projectseeker.framework.common.BaseAuthFragment
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -29,7 +25,9 @@ import java.util.concurrent.TimeUnit
 class RegisterUserFragment : BaseAuthFragment() {
 
     private val viewModel: RegisterUserViewModel by viewModels()
-    private lateinit var binding: FragmentRegisterUserBinding
+    private val binding: FragmentRegisterUserBinding by lazy {
+        FragmentRegisterUserBinding.inflate(layoutInflater)
+    }
     private val firebaseAuth = FirebaseAuth.getInstance()
 
     inner class PhoneRegisterCallBacks : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
@@ -70,16 +68,15 @@ class RegisterUserFragment : BaseAuthFragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        setupCountrySelector()
+        sendCodeButtom()
+        observeViewModel()
+        return binding.root
+    }
 
-        binding = FragmentRegisterUserBinding.inflate(layoutInflater)
+    private fun setupCountrySelector() {
         binding.ccp.detectSIMCountry(true)
         binding.ccp.showNameCode(false)
-
-        sendCodeButtom()
-
-        observeViewModel()
-
-        return binding.root
     }
 
     private fun allowSMSCodeInputAndDisablePhoneInput() {
@@ -156,25 +153,21 @@ class RegisterUserFragment : BaseAuthFragment() {
     }
 
     private fun observeViewModel() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.userRegistered.collect { user ->
-                    user?.let { viewModel.getIDTokenAndLogin() }
+        observeStateFlowOnStarted {
+            viewModel.userRegistered.collect { user ->
+                user?.let { viewModel.getIDTokenAndLogin() }
+            }
+        }
+        observeStateFlowOnStarted {
+            viewModel.logged.collect { user ->
+                user?.let {
+                    logInDone(it)
                 }
             }
         }
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.logged.collect { user ->
-                    user?.let {
-                        logInDone(it)
-                    }
-                }
-            }
-        }
-        observeLoading(viewModel)
-        observeErrorString(viewModel)
-        observeErrorResourceCode(viewModel)
+        observeLoading(viewModel.isLoading)
+        observeErrorString(viewModel.errorString) { viewModel.errorStringHandled() }
+        observeErrorResourceCode(viewModel.errorResourceCode) { viewModel.errorResourceCodeHandled() }
     }
 
     private fun sendCodeButtom() {

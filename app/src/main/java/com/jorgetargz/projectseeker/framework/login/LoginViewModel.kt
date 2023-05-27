@@ -38,6 +38,7 @@ class LoginViewModel @Inject constructor(
     val logged: StateFlow<FirebaseUser?> = _logged
 
     fun getIDTokenAndLogin() {
+        _isLoading.value = true
         firebaseAuth.currentUser?.getIdToken(true)?.addOnCompleteListener {
             if (it.isSuccessful) {
                 val token = it.result?.token
@@ -45,9 +46,11 @@ class LoginViewModel @Inject constructor(
                     login(token)
                 } else {
                     _errorResourceCode.value = R.string.error_login
+                    _isLoading.value = false
                 }
             } else {
                 _errorResourceCode.value = R.string.error_login
+                _isLoading.value = false
             }
         }
     }
@@ -67,16 +70,43 @@ class LoginViewModel @Inject constructor(
                     }
 
                     is NetworkResult.Success -> {
-                        streamChatLogin()
+                        if (checkIfUserIsRegistered()) {
+                            streamChatLogin()
+                        } else {
+                            deleteUnregisteredUser()
+                            _errorResourceCode.value = R.string.you_need_to_register
+                            _isLoading.value = false
+                        }
                     }
                 }
             }
         }
     }
 
+    private fun deleteUnregisteredUser() {
+        val currentUser = firebaseAuth.currentUser
+        currentUser?.delete()?.addOnCompleteListener {
+            if (it.isSuccessful) {
+                Timber.d("Not registered user deleted")
+            } else {
+                Timber.e(it.exception)
+            }
+        }
+    }
+
+    private fun checkIfUserIsRegistered(): Boolean {
+        val currentUser = firebaseAuth.currentUser
+        return currentUser?.displayName != null && currentUser.email != null
+    }
+
     private fun streamChatLogin() {
         val currentUser = firebaseAuth.currentUser
         currentUser?.let {
+            if (currentUser.displayName == null) {
+                _errorResourceCode.value = R.string.you_need_to_register
+                _isLoading.value = false
+                return
+            }
             val streamUser = User(
                 id = currentUser.uid,
                 image = currentUser.photoUrl.toString(),
@@ -111,6 +141,7 @@ class LoginViewModel @Inject constructor(
 
     fun firebaseAuthWithGoogle(idToken: String) {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
+        _isLoading.value = true
         firebaseAuth.signInWithCredential(credential)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
@@ -123,6 +154,7 @@ class LoginViewModel @Inject constructor(
                     _errorResourceCode.value = R.string.authentication_failed
                     Timber.d("signInWithCredential:failure", task.exception)
                 }
+                _isLoading.value = false
             }
     }
 
@@ -131,6 +163,7 @@ class LoginViewModel @Inject constructor(
             _errorResourceCode.value = R.string.error_empty_fields
             return
         }
+        _isLoading.value = true
         firebaseAuth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
@@ -140,10 +173,12 @@ class LoginViewModel @Inject constructor(
                     Timber.w(task.exception, "signInWithEmail:failure")
                     _errorResourceCode.value = R.string.authentication_failed
                 }
+                _isLoading.value = false
             }
     }
 
     fun firebaseAuthWithPhoneAuthCredential(credential: PhoneAuthCredential) {
+        _isLoading.value = true
         firebaseAuth.signInWithCredential(credential)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
@@ -157,6 +192,22 @@ class LoginViewModel @Inject constructor(
                         _errorResourceCode.value = R.string.authentication_failed
                     }
                 }
+                _isLoading.value = false
+            }
+    }
+
+    fun firebaseSendPasswordResetEmail(email: String) {
+        _isLoading.value = true
+        firebaseAuth.sendPasswordResetEmail(email)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Timber.d("Email sent.")
+                    _errorResourceCode.value = R.string.email_sent
+                } else {
+                    Timber.d("Email not sent.")
+                    _errorResourceCode.value = R.string.email_not_sent
+                }
+                _isLoading.value = false
             }
     }
 

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -51,23 +52,9 @@ class ListProjectsViewModel @Inject constructor(
     fun loadOpenProjects() {
         viewModelScope.launch {
             listProjectsDataManager.getOpenProjects().catch {
-                _isLoading.value = false
-                _errorResourceCode.value = R.string.error_get_open_projects
+                handleListProjectsNetworkException(it)
             }.collect { result ->
-                when (result) {
-                    is NetworkResult.Loading -> {
-                        _isLoading.value = true
-                    }
-
-                    is NetworkResult.Success -> {
-                        _isLoading.value = false
-                        _projects.value = result.data
-                    }
-
-                    is NetworkResult.Error -> {
-                        handleNetworkError(result)
-                    }
-                }
+                handleListProjectsNetworkResult(result)
             }
         }
     }
@@ -75,23 +62,82 @@ class ListProjectsViewModel @Inject constructor(
     fun loadMyProjects() {
         viewModelScope.launch {
             listProjectsDataManager.getMyProjects().catch {
-                _isLoading.value = false
-                _errorResourceCode.value = R.string.error_get_my_projects
+                handleListProjectsNetworkException(it)
             }.collect { result ->
-                when (result) {
-                    is NetworkResult.Loading -> {
-                        _isLoading.value = true
-                    }
+                handleListProjectsNetworkResult(result)
+            }
+        }
+    }
 
-                    is NetworkResult.Success -> {
-                        _isLoading.value = false
-                        _projects.value = result.data
-                    }
+    fun loadMyOpenProjects() {
+        viewModelScope.launch {
+            listProjectsDataManager.getMyOpenProjects().catch {
+                handleListProjectsNetworkException(it)
+            }.collect { result ->
+                handleListProjectsNetworkResult(result)
+            }
+        }
+    }
 
-                    is NetworkResult.Error -> {
-                        handleNetworkError(result)
-                    }
-                }
+    fun loadMyProjectsInProgress() {
+        viewModelScope.launch {
+            listProjectsDataManager.getMyInProgressProjects().catch {
+                handleListProjectsNetworkException(it)
+            }.collect { result ->
+                handleListProjectsNetworkResult(result)
+            }
+        }
+    }
+
+    fun loadProjectsAssignedToMe() {
+        viewModelScope.launch {
+            listProjectsDataManager.getProjectsAssignedToMe().catch {
+                handleListProjectsNetworkException(it)
+            }.collect { result ->
+                handleListProjectsNetworkResult(result)
+            }
+        }
+    }
+
+    fun loadProjectsWhereIHaveOfferFreelancer() {
+        viewModelScope.launch {
+            listProjectsDataManager.getProjectsWhereIHaveOffer().catch {
+                handleListProjectsNetworkException(it)
+            }.collect { result ->
+                handleListProjectsNetworkResult(result)
+            }
+        }
+    }
+
+    fun loadOpenProjectsMatchingMySkills(skills: List<String>) {
+        viewModelScope.launch {
+            listProjectsDataManager.getOpenProjectsBySkills(skills).catch {
+                handleListProjectsNetworkException(it)
+            }.collect { result ->
+                handleListProjectsNetworkResult(result)
+            }
+        }
+    }
+
+    private fun handleListProjectsNetworkException(throwable: Throwable) {
+        _isLoading.value = false
+        _errorResourceCode.value = R.string.error_get_projects
+        Timber.e(throwable.message, throwable)
+    }
+
+    private fun handleListProjectsNetworkResult(result: NetworkResult<List<Project>>) {
+        when (result) {
+            is NetworkResult.Loading -> {
+                _isLoading.value = true
+            }
+
+            is NetworkResult.Success -> {
+                _isLoading.value = false
+                _projects.value = result.data
+            }
+
+            is NetworkResult.Error -> {
+                handleNetworkError(result)
             }
         }
     }

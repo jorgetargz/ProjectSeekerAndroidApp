@@ -12,9 +12,7 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.textfield.TextInputEditText
@@ -29,14 +27,14 @@ import com.jorgetargz.projectseeker.framework.common.adapters.skills.SkillsAdapt
 import dagger.hilt.android.AndroidEntryPoint
 import io.getstream.chat.android.client.ChatClient
 import io.getstream.chat.android.ui.avatar.AvatarView
-import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @AndroidEntryPoint
 class ProfileFragment : BaseFragment() {
 
     private val viewModel: ProfileViewModel by viewModels()
-    private lateinit var binding: FragmentProfileBinding
+    private val binding: FragmentProfileBinding by lazy {
+        FragmentProfileBinding.inflate(layoutInflater)
+    }
 
     private val availabilityOptions = arrayListOf(
         Availability.FULL_TIME,
@@ -54,7 +52,7 @@ class ProfileFragment : BaseFragment() {
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val imageUri = result.data?.data
-            imageUri?.let {viewModel.updateProfilePic(it) }
+            imageUri?.let { viewModel.updateProfilePic(it) }
         } else {
             showSnackbar("Image not updated")
         }
@@ -84,13 +82,16 @@ class ProfileFragment : BaseFragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        setupBinding()
         setupSkillsAdapter()
         setupAvailabilitySpinner()
         setupUpdateProfileButton()
         observeViewModel()
         viewModel.getMyProfile()
         return binding.root
+    }
+
+    private fun checkIfEmailIsVerified() {
+        viewModel.checkIfEmailIsVerified()
     }
 
     private fun setupUpdateProfileButton() {
@@ -108,30 +109,66 @@ class ProfileFragment : BaseFragment() {
     }
 
     private fun observeViewModel() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.profile.collect { profile ->
-                    Timber.d("Profile: $profile")
-                    profile?.let { displayProfile(it) }
+        observeStateFlowOnStarted {
+            viewModel.profile.collect { profile ->
+                profile?.let { displayProfile(it) }
+            }
+        }
+        observeStateFlowOnStarted {
+            viewModel.chatClientProfile.collect { user ->
+                user?.let {
+                    binding.avatarView.setUserData(user)
+                    val navigationView =
+                        requireActivity().findViewById<NavigationView>(R.id.nav_view)
+                    val headerView = navigationView.getHeaderView(0)
+                    val headerAvatar = headerView.findViewById<AvatarView>(R.id.avatarView)
+                    headerAvatar.setUserData(user)
                 }
             }
         }
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.chatClientProfile.collect { user ->
-                    user?.let {
-                        binding.avatarView.setUserData(user)
-                        val navigationView = requireActivity().findViewById<NavigationView>(R.id.nav_view)
-                        val headerView = navigationView.getHeaderView(0)
-                        val headerAvatar = headerView.findViewById<AvatarView>(R.id.avatarView)
-                        headerAvatar.setUserData(user)
+        observeStateFlowOnStarted {
+            viewModel.isEmailVerified.collect { isEmailVerified ->
+                isEmailVerified?.let {
+                    if (!isEmailVerified) {
+                        MaterialAlertDialogBuilder(requireContext())
+                            .setTitle(getString(R.string.email_not_verified))
+                            .setMessage(getString(R.string.email_not_verified_message))
+                            .setPositiveButton(getString(R.string.resend_verification_email)) { dialog, _ ->
+                                viewModel.sendVerificationEmail()
+                                dialog.dismiss()
+                            }
+                            .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
+                                dialog.dismiss()
+                            }
+                            .show()
                     }
+                    viewModel.isEmailVerifiedHandled()
                 }
             }
         }
-        observeLoading(viewModel)
-        observeErrorString(viewModel)
-        observeErrorResourceCode(viewModel)
+        observeStateFlowOnStarted {
+            viewModel.isAccountDeleted.collect { isAccountDeleted ->
+                isAccountDeleted?.let {
+                    if (isAccountDeleted) {
+                        MaterialAlertDialogBuilder(requireContext())
+                            .setTitle(getString(R.string.account_deleted))
+                            .setMessage(getString(R.string.account_deleted_message))
+                            .setPositiveButton(getString(R.string.ok)) { dialog, _ ->
+                                dialog.dismiss()
+                                findNavController().popBackStack(R.id.loginFragment, false)
+                            }
+                            .setOnCancelListener {
+                                findNavController().popBackStack(R.id.loginFragment, false)
+                            }
+                            .show()
+                    }
+                    viewModel.isAccountDeletedHandled()
+                }
+            }
+        }
+        observeLoading(viewModel.isLoading)
+        observeErrorString(viewModel.errorString) { viewModel.errorStringHandled() }
+        observeErrorResourceCode(viewModel.errorResourceCode) { viewModel.errorResourceCodeHandled() }
     }
 
     private fun displayProfile(profile: Profile) {
@@ -152,8 +189,11 @@ class ProfileFragment : BaseFragment() {
 
                 }
             }
+            checkIfEmailIsVerified()
             setupProfilePicture()
             setupActiveRoleSpinner(profile)
+            setupChangePasswordButton(profile.email)
+            setupDeleteAccountButton()
             name.text = profile.name
             email.text = profile.email
             if (profile.phone.isEmpty()) {
@@ -166,6 +206,38 @@ class ProfileFragment : BaseFragment() {
             phone.text = profile.phone
             titleEditText.setText(profile.title)
             descriptionEditText.setText(profile.description)
+        }
+    }
+
+    private fun setupDeleteAccountButton() {
+        binding.deleteAccountButton.setOnClickListener {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(getString(R.string.delete_account))
+                .setMessage(getString(R.string.delete_account_message))
+                .setPositiveButton(getString(R.string.delete)) { dialog, _ ->
+                    viewModel.deleteAccount()
+                    dialog.dismiss()
+                }
+                .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .show()
+        }
+    }
+
+    private fun setupChangePasswordButton(email: String) {
+        binding.changePasswordButton.setOnClickListener {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(getString(R.string.change_password))
+                .setMessage(getString(R.string.change_password_message))
+                .setPositiveButton(getString(R.string.send_email)) { dialog, _ ->
+                    viewModel.sendChangePasswordEmail(email)
+                    dialog.dismiss()
+                }
+                .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .show()
         }
     }
 
@@ -246,9 +318,5 @@ class ProfileFragment : BaseFragment() {
     private fun setupAvailabilitySpinner() {
         val adapter = ArrayAdapter(requireContext(), R.layout.dropdown_item, availabilityOptions)
         binding.availability.adapter = adapter
-    }
-
-    private fun setupBinding() {
-        binding = FragmentProfileBinding.inflate(layoutInflater)
     }
 }

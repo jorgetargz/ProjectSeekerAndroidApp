@@ -18,8 +18,23 @@ interface ProjectServices {
     @GET("secured/projects/openProjects")
     suspend fun getOpenProjects() : Response<List<ProjectInfoDTO>>
 
+    @GET("secured/projects/client/getMyOpenProjects")
+    suspend fun getMyOpenProjects() : Response<List<ProjectInfoDTO>>
+
+    @GET("secured/projects/client/getMyInProgressProjects")
+    suspend fun getMyInProgressProjects() : Response<List<ProjectInfoDTO>>
+
     @GET("secured/projects/client/myProjects")
     suspend fun getMyProjects() : Response<List<ProjectInfoDTO>>
+
+    @GET("secured/projects/freelancer/getProjectsAssignedToMe")
+    suspend fun getProjectsAssignedToMe() : Response<List<ProjectInfoDTO>>
+
+    @GET("secured/projects/freelancer/getProjectsWhereIHaveOffer")
+    suspend fun getProjectsWhereIHaveOffer() : Response<List<ProjectInfoDTO>>
+
+    @POST("secured/projects/openProjectsBySkills")
+    suspend fun getOpenProjectsBySkills(@Body skills : List<String>) : Response<List<ProjectInfoDTO>>
 
     @GET("secured/projects/projectInfo")
     suspend fun getProjectInfo(@Query("id") projectId : String ) : Response<ProjectInfoDTO>

@@ -20,6 +20,21 @@ class ProjectsRemoteDataSource @Inject constructor(
     suspend fun getMyProjects() =
         safeSpringApiCall.safeApiCall { projectsService.getMyProjects() }
 
+    suspend fun getMyOpenProjects() =
+        safeSpringApiCall.safeApiCall { projectsService.getMyOpenProjects() }
+
+    suspend fun getMyInProgressProjects() =
+        safeSpringApiCall.safeApiCall { projectsService.getMyInProgressProjects() }
+
+    suspend fun getProjectsAssignedToMe() =
+        safeSpringApiCall.safeApiCall { projectsService.getProjectsAssignedToMe() }
+
+    suspend fun getProjectsWhereIHaveOffer() =
+        safeSpringApiCall.safeApiCall { projectsService.getProjectsWhereIHaveOffer() }
+
+    suspend fun getOpenProjectsBySkills(skills: List<String>) =
+        safeSpringApiCall.safeApiCall { projectsService.getOpenProjectsBySkills(skills) }
+
     suspend fun getProjectInfo(projectId: String) =
         safeSpringApiCall.safeApiCall { projectsService.getProjectInfo(projectId) }
 

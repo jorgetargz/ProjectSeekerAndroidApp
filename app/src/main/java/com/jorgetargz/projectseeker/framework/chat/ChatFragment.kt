@@ -22,16 +22,14 @@ import io.getstream.chat.android.ui.message.list.viewmodel.factory.MessageListVi
 class ChatFragment : BaseFragment() {
 
     private val args: ChatFragmentArgs by navArgs()
-
-    private var _binding: FragmentChatBinding? = null
-    private val binding get() = _binding!!
+    private lateinit var binding: FragmentChatBinding
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         // Inflate the layout for this fragment
-        _binding = FragmentChatBinding.inflate(inflater, container, false)
+        binding = FragmentChatBinding.inflate(inflater, container, false)
 
         setupMessages()
 
@@ -77,11 +75,6 @@ class ChatFragment : BaseFragment() {
             messageListViewModel.onEvent(MessageListViewModel.Event.BackButtonPressed)
         }
         binding.messagesHeaderView.setBackButtonClickListener(backHandler)
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 
 }

@@ -5,10 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import com.jorgetargz.projectseeker.R
 import com.jorgetargz.projectseeker.data.dto.users.ChangeUserRoleDTO
 import com.jorgetargz.projectseeker.data.dto.users.ModifyClientProfileDTO
 import com.jorgetargz.projectseeker.data.dto.users.ModifyFreelancerProfileDTO
+import com.jorgetargz.projectseeker.data.shared_preferences.EncryptedSharedPreferencesManager
 import com.jorgetargz.projectseeker.domain.user.ActiveRole
 import com.jorgetargz.projectseeker.domain.user.Availability
 import com.jorgetargz.projectseeker.domain.user.Profile
@@ -28,7 +30,8 @@ class ProfileViewModel @Inject constructor(
     private val profileDataManager: ProfileDataManager,
     private val chatClient: ChatClient,
     private val firebaseAuth: FirebaseAuth,
-    private val firebaseStorage: FirebaseStorage
+    private val firebaseStorage: FirebaseStorage,
+    private val encryptedSharedPreferencesManager: EncryptedSharedPreferencesManager
 ) : BaseViewModel() {
 
     private val _profile = MutableStateFlow<Profile?>(null)
@@ -36,6 +39,12 @@ class ProfileViewModel @Inject constructor(
 
     private val _chatClientProfile = MutableStateFlow<User?>(null)
     val chatClientProfile : StateFlow<User?> = _chatClientProfile
+
+    private val _isEmailVerified = MutableStateFlow<Boolean?>(null)
+    val isEmailVerified : StateFlow<Boolean?> = _isEmailVerified
+
+    private val _isAccountDeleted = MutableStateFlow<Boolean?>(null)
+    val isAccountDeleted : StateFlow<Boolean?> = _isAccountDeleted
 
     fun getMyProfile() {
         viewModelScope.launch {
@@ -153,32 +162,95 @@ class ProfileViewModel @Inject constructor(
             _errorResourceCode.value = R.string.error_uploading_image
             _isLoading.value = false
         }.addOnSuccessListener {
-            profilePictureRef.downloadUrl.addOnSuccessListener { uri ->
-                Timber.d("Image uploaded successfully")
-                firebaseAuth.currentUser?.updateProfile(
-                    UserProfileChangeRequest.Builder()
-                        .setPhotoUri(uri)
-                        .build()
-                )?.addOnSuccessListener {
-                    Timber.d("Firebase profile updated successfully")
-                }?.addOnFailureListener {
-                    Timber.d("Firebase profile not updated")
+            updateFirebaseAndStreamChatProfilePic(profilePictureRef)
+        }
+    }
+
+    private fun updateFirebaseAndStreamChatProfilePic(profilePictureRef: StorageReference) {
+        profilePictureRef.downloadUrl.addOnSuccessListener { downloadURL ->
+            Timber.d("Image uploaded successfully")
+            firebaseAuth.currentUser?.updateProfile(
+                UserProfileChangeRequest.Builder()
+                    .setPhotoUri(downloadURL)
+                    .build()
+            )?.addOnSuccessListener {
+                Timber.d("Firebase profile updated successfully")
+            }?.addOnFailureListener {
+                Timber.d("Firebase profile not updated")
+            }
+            val chatClientUser = User(
+                id = chatClient.getCurrentUser()?.id ?: run {
+                    Timber.d("Chat client user id is null")
+                    _errorResourceCode.value = R.string.error_uploading_image
+                    _isLoading.value = false
+                    return@addOnSuccessListener
+                },
+                image = downloadURL.toString()
+            )
+            chatClient.updateUser(chatClientUser).enqueue { result ->
+                if (result.isSuccess) {
+                    _chatClientProfile.value = chatClientUser
+                    _isLoading.value = false
+                } else {
+                    Timber.d("Chat client profile not updated")
+                    _errorResourceCode.value = R.string.error_uploading_image
+                    _isLoading.value = false
                 }
-                val chatClientUser = User(
-                    id = chatClient.getCurrentUser()?.id ?: "",
-                    image = uri.toString()
-                )
-                chatClient.updateUser(chatClientUser).enqueue { result ->
-                    if (result.isSuccess) {
-                        _chatClientProfile.value = chatClientUser
+            }
+        }
+    }
+
+    fun checkIfEmailIsVerified() {
+        firebaseAuth.currentUser?.reload()
+        _isEmailVerified.value = firebaseAuth.currentUser?.isEmailVerified
+        Timber.d("Email verified: ${firebaseAuth.currentUser?.isEmailVerified}")
+    }
+
+    fun sendVerificationEmail() {
+        firebaseAuth.currentUser?.sendEmailVerification()?.addOnSuccessListener {
+            _errorResourceCode.value = R.string.email_sent
+        }?.addOnFailureListener {
+            Timber.e(it.message, it)
+            _errorResourceCode.value = R.string.email_not_sent
+        }
+    }
+
+    fun isEmailVerifiedHandled() {
+        _isEmailVerified.value = null
+    }
+
+    fun sendChangePasswordEmail(email: String) {
+        firebaseAuth.sendPasswordResetEmail(email).addOnSuccessListener {
+            _errorResourceCode.value = R.string.email_sent
+        }.addOnFailureListener {
+            Timber.e(it.message, it)
+            _errorResourceCode.value = R.string.email_not_sent
+        }
+    }
+
+    fun deleteAccount() {
+        viewModelScope.launch {
+            profileDataManager.deleteAccount().collect { result ->
+                when (result) {
+                    is NetworkResult.Loading -> {
+                        _isLoading.value = true
+                    }
+
+                    is NetworkResult.Success -> {
                         _isLoading.value = false
-                    } else {
-                        Timber.d("Chat client profile not updated")
-                        _errorResourceCode.value = R.string.error_uploading_image
-                        _isLoading.value = false
+                        _isAccountDeleted.value = true
+                    }
+
+                    is NetworkResult.Error -> {
+                        handleNetworkError(result)
+                        encryptedSharedPreferencesManager.clear()
                     }
                 }
             }
         }
+    }
+
+    fun isAccountDeletedHandled() {
+        _isAccountDeleted.value = null
     }
 }

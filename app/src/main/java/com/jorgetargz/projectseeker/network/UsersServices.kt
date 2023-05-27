@@ -6,6 +6,7 @@ import com.jorgetargz.projectseeker.data.dto.users.ModifyFreelancerProfileDTO
 import com.jorgetargz.projectseeker.data.dto.users.ProfileDTO
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PUT
 import retrofit2.http.Query
@@ -26,4 +27,7 @@ interface UsersServices {
 
     @PUT("secured/users/modifyClientProfile")
     suspend fun modifyClientProfile(@Body modifyClientProfileDTO: ModifyClientProfileDTO): Response<ProfileDTO>
+
+    @DELETE("secured/users/deleteMyAccount")
+    suspend fun deleteAccount(): Response<Unit>
 }

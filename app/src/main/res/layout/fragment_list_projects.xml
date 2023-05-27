@@ -19,13 +19,70 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/listMyOpenProjectsButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:text="@string/show_my_open_projects"
+        app:layout_constraintBottom_toTopOf="@id/addProjectFloatingActionButton"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/listProjectsWhereIHaveOfferFreelancerButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/show_projects_where_i_have_offer"
+        app:layout_constraintBottom_toTopOf="@id/listMyOpenProjectsButton"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/listProjectsAssignedToMeButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/show_projects_assigned_to_me"
+        app:layout_constraintBottom_toTopOf="@id/listProjectsWhereIHaveOfferFreelancerButton"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/listMyProjectsButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/show_my_projects"
+        app:layout_constraintBottom_toTopOf="@id/listProjectsAssignedToMeButton"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/listMyProjectsInProgressButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/show_my_projects_in_progress"
+        app:layout_constraintBottom_toTopOf="@id/listMyProjectsButton"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/listAllOpenProjectsButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/show_all_open_projects"
+        app:layout_constraintBottom_toTopOf="@id/listMyProjectsInProgressButton"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/listOpenProjectsMatchingMySkillsButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/show_open_projects_matching_my_skills"
+        app:layout_constraintBottom_toTopOf="@id/listAllOpenProjectsButton"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/addProjectFloatingActionButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
-        android:visibility="gone"
+        android:visibility="visible"
         android:clickable="true"
         android:focusable="true"
         android:src="@drawable/ic_add"

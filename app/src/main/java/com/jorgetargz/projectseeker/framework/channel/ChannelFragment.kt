@@ -19,24 +19,23 @@ import io.getstream.chat.android.ui.channel.list.viewmodel.factory.ChannelListVi
 @AndroidEntryPoint
 class ChannelFragment : BaseFragment() {
 
-    private val viewModel : ChannelViewModel by viewModels()
-    private var _binding: FragmentChannelBinding? = null
-    private val binding get() = _binding!!
+    private val viewModel: ChannelViewModel by viewModels()
+    private val binding: FragmentChannelBinding by lazy {
+        FragmentChannelBinding.inflate(layoutInflater)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Inflate the layout for this fragment
-        _binding = FragmentChannelBinding.inflate(inflater, container, false)
-
         setupChannels()
         observeViewModel()
 
-        with(binding){
+        with(binding) {
             with(channelsView) {
                 setChannelItemClickListener { channel ->
-                    val action = ChannelFragmentDirections.actionChannelFragmentToChatFragment(channel.cid)
+                    val action =
+                        ChannelFragmentDirections.actionChannelFragmentToChatFragment(channel.cid)
                     findNavController().navigate(action)
                 }
                 setChannelDeleteClickListener { channel ->
@@ -54,9 +53,9 @@ class ChannelFragment : BaseFragment() {
     }
 
     private fun observeViewModel() {
-        observeLoading(viewModel)
-        observeErrorString(viewModel)
-        observeErrorResourceCode(viewModel)
+        observeLoading(viewModel.isLoading)
+        observeErrorString(viewModel.errorString) { viewModel.errorStringHandled() }
+        observeErrorResourceCode(viewModel.errorResourceCode) { viewModel.errorResourceCodeHandled() }
     }
 
     private fun setupChannels() {
@@ -68,10 +67,5 @@ class ChannelFragment : BaseFragment() {
 
         listHeaderViewModel.bindView(binding.channelListHeaderView, viewLifecycleOwner)
         listViewModel.bindView(binding.channelsView, viewLifecycleOwner)
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 }

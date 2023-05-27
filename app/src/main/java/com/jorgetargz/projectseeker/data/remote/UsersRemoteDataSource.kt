@@ -23,4 +23,6 @@ class UsersRemoteDataSource @Inject constructor(
 
     suspend fun modifyClientProfile(modifyClientProfileDTO: ModifyClientProfileDTO) =
         safeSpringApiCall.safeApiCall { usersServices.modifyClientProfile(modifyClientProfileDTO) }
+
+    suspend fun deleteAccount() = safeSpringApiCall.safeApiCall { usersServices.deleteAccount() }
 }

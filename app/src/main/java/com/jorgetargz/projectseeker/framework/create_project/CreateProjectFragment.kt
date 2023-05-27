@@ -6,9 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -22,7 +19,6 @@ import com.jorgetargz.projectseeker.framework.common.Constants
 import com.jorgetargz.projectseeker.framework.common.adapters.skills.SkillsActions
 import com.jorgetargz.projectseeker.framework.common.adapters.skills.SkillsAdapter
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Date
@@ -31,7 +27,9 @@ import java.util.Date
 class CreateProjectFragment : BaseFragment() {
 
     private val viewModel: CreateProjectViewModel by viewModels()
-    private lateinit var binding: FragmentCreateProjectBinding
+    private val binding: FragmentCreateProjectBinding by lazy {
+        FragmentCreateProjectBinding.inflate(layoutInflater)
+    }
     private lateinit var adapter: SkillsAdapter
 
     inner class SkillsActionsImpl : SkillsActions {
@@ -56,7 +54,6 @@ class CreateProjectFragment : BaseFragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        setupBinding()
         setupSkillsAdapter()
         setupAddSkillButton()
         setupDatePickers()
@@ -66,20 +63,18 @@ class CreateProjectFragment : BaseFragment() {
     }
 
     private fun observeViewModel() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.projectCreated.collect { projectCreated ->
-                    projectCreated?.let {
-                        showSnackbar(getString(R.string.project_created))
-                        viewModel.projectCreatedHandled()
-                        findNavController().popBackStack()
-                    }
+        observeStateFlowOnStarted {
+            viewModel.projectCreated.collect { projectCreated ->
+                projectCreated?.let {
+                    showSnackbar(getString(R.string.project_created))
+                    viewModel.projectCreatedHandled()
+                    findNavController().popBackStack()
                 }
             }
         }
-        observeLoading(viewModel)
-        observeErrorString(viewModel)
-        observeErrorResourceCode(viewModel)
+        observeLoading(viewModel.isLoading)
+        observeErrorString(viewModel.errorString) { viewModel.errorStringHandled() }
+        observeErrorResourceCode(viewModel.errorResourceCode) { viewModel.errorResourceCodeHandled() }
     }
 
     private fun setupCreateProjectButton() {
@@ -92,14 +87,14 @@ class CreateProjectFragment : BaseFragment() {
             val maxBudget = binding.maxBudget.editText?.text.toString()
             val skills = adapter.currentList
             viewModel.createProject(
-                    title,
-                    description,
-                    startDate,
-                    deadline,
-                    skills,
-                    minBudget,
-                    maxBudget
-                )
+                title,
+                description,
+                startDate,
+                deadline,
+                skills,
+                minBudget,
+                maxBudget
+            )
         }
     }
 
@@ -131,10 +126,6 @@ class CreateProjectFragment : BaseFragment() {
         }
     }
 
-    private fun setupBinding() {
-        binding = FragmentCreateProjectBinding.inflate(layoutInflater)
-    }
-
     private fun setupAddSkillButton() {
         binding.addSkillButton.setOnClickListener {
             val dialogView = layoutInflater.inflate(R.layout.dialog_add_skill, binding.root, false)
@@ -144,7 +135,8 @@ class CreateProjectFragment : BaseFragment() {
                 .setView(dialogView)
                 .setPositiveButton(getString(R.string.add)) { dialog1, _ ->
                     val dialog = dialog1 as Dialog
-                    val skill = dialog.findViewById<TextInputEditText>(R.id.skill).text.toString().trim()
+                    val skill =
+                        dialog.findViewById<TextInputEditText>(R.id.skill).text.toString().trim()
                     if (skill.isNotEmpty()) {
                         this.adapter.submitList(this.adapter.currentList + skill)
                     }

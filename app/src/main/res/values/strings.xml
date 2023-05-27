@@ -153,4 +153,29 @@
 
     <string name="logout_everywhere_title">Logout everywhere</string>
     <string name="logout_everywhere_message">Are you sure you want to logout everywhere and exit the app?</string>
+    <string name="login">Login</string>
+    <string name="forgot_password">Forgot password</string>
+    <string name="change_password">Change password</string>
+    <string name="send_email">Send email</string>
+    <string name="email_sent">Email sent</string>
+    <string name="email_not_verified">Email not verified</string>
+    <string name="email_not_verified_message">Please verify your email</string>
+    <string name="resend_verification_email">Send verification email</string>
+    <string name="delete_profile">Delete Account</string>
+    <string name="change_password_message">Send an email to change your password</string>
+    <string name="delete_account">Delete Account</string>
+    <string name="delete_account_message">This will delete all your profiles you will need to register to use the app again</string>
+    <string name="account_deleted">Account deleted</string>
+    <string name="account_deleted_message">Your account have been deleted</string>
+    <string name="ok">Ok</string>
+    <string name="show_my_open_projects">List my open projects</string>
+    <string name="show_projects_where_i_have_offer">List Projects where I have made an offer</string>
+    <string name="show_projects_assigned_to_me">List Projects Assigned to me</string>
+    <string name="show_my_projects">List my projects</string>
+    <string name="show_my_projects_in_progress">List my projects in progress</string>
+    <string name="show_all_open_projects">List all open projects</string>
+    <string name="show_open_projects_matching_my_skills">List open projects matching my skills</string>
+    <string name="error_get_projects">Error getting projects</string>
+    <string name="no_offers">There are no offers</string>
+    <string name="you_need_to_register">Register first or use Google</string>
 </resources>

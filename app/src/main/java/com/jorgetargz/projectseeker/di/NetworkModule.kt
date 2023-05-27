@@ -7,7 +7,6 @@ import com.jorgetargz.projectseeker.network.SessionService
 import com.jorgetargz.projectseeker.network.UsersServices
 import com.jorgetargz.projectseeker.network.adapters.LocalDateTypeAdapter
 import com.jorgetargz.projectseeker.network.commom.Config
-import com.jorgetargz.projectseeker.network.interceptors.SkillsAuthInterceptor
 import com.jorgetargz.projectseeker.network.interceptors.SpringBootAuthInterceptor
 import dagger.Module
 import dagger.Provides
@@ -40,22 +39,6 @@ object NetworkModule {
             .build()
         return Retrofit.Builder()
             .baseUrl(Config.BASE_URL_SPRING_BOOT)
-            .addConverterFactory(GsonConverterFactory.create(gson))
-            .client(okHttpClient)
-            .build()
-    }
-
-    @Provides
-    @Named(Config.RETROFIT_SKILLS)
-    fun provideRetrofitSkills(
-        skillsAuthInterceptor: SkillsAuthInterceptor,
-        gson: Gson
-    ): Retrofit {
-        val okHttpClient = OkHttpClient.Builder()
-            .addInterceptor(skillsAuthInterceptor)
-            .build()
-        return Retrofit.Builder()
-            .baseUrl(Config.BASE_URL_SKILLS)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .client(okHttpClient)
             .build()

@@ -11,4 +11,9 @@ class ListProjectsDataManager @Inject constructor(
     fun getMyProfile() = usersRepository.getMyProfile()
     fun getOpenProjects() = projectsRepository.getOpenProjects()
     fun getMyProjects() = projectsRepository.getMyProjects()
+    fun getMyOpenProjects() = projectsRepository.getMyOpenProjects()
+    fun getMyInProgressProjects() = projectsRepository.getMyInProgressProjects()
+    fun getProjectsAssignedToMe() = projectsRepository.getProjectsAssignedToMe()
+    fun getProjectsWhereIHaveOffer() = projectsRepository.getProjectsWhereIHaveOffer()
+    fun getOpenProjectsBySkills(skills: List<String>) = projectsRepository.getOpenProjectsBySkills(skills)
 }

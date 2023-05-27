@@ -25,20 +25,17 @@ import timber.log.Timber
 @AndroidEntryPoint
 class UsersFragment : BaseFragment() , MenuProvider {
 
-    private var _binding: FragmentUsersBinding? = null
-    private val binding get() = _binding!!
+    private val binding: FragmentUsersBinding by lazy {
+        FragmentUsersBinding.inflate(layoutInflater)
+    }
 
     private val usersAdapter by lazy { UsersAdapter() }
-
     private val client = ChatClient.instance()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Inflate the layout for this fragment
-        _binding = FragmentUsersBinding.inflate(inflater, container, false)
-
         addMenuProvider()
         setupRecyclerView()
         queryAllUsers()
@@ -94,11 +91,6 @@ class UsersFragment : BaseFragment() , MenuProvider {
         }
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
-
     override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
         menuInflater.inflate(R.menu.users_menu, menu)
         val search = menu.findItem(R.id.menu_search)
@@ -128,16 +120,3 @@ class UsersFragment : BaseFragment() , MenuProvider {
         return false
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

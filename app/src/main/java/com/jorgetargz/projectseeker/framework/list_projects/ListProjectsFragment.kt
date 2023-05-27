@@ -5,9 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.jorgetargz.projectseeker.databinding.FragmentListProjectsBinding
@@ -16,14 +13,15 @@ import com.jorgetargz.projectseeker.framework.common.BaseFragment
 import com.jorgetargz.projectseeker.framework.common.adapters.projects.ProjectsActions
 import com.jorgetargz.projectseeker.framework.common.adapters.projects.ProjectsAdapter
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @AndroidEntryPoint
 class ListProjectsFragment : BaseFragment() {
 
     private val viewModel: ListProjectsViewModel by viewModels()
-    private lateinit var binding: FragmentListProjectsBinding
+    private val binding: FragmentListProjectsBinding by lazy {
+        FragmentListProjectsBinding.inflate(layoutInflater)
+    }
     private lateinit var adapter: ProjectsAdapter
 
     inner class ProjectsActionsImpl : ProjectsActions {
@@ -40,11 +38,44 @@ class ListProjectsFragment : BaseFragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        setupBindng()
         setupAddProjectFAB()
         observeViewModel()
         viewModel.getMyProfile()
         return binding.root
+    }
+
+    private fun setupClientFilterButtons() {
+        with(binding) {
+            listMyOpenProjectsButton.setOnClickListener {
+                viewModel.loadMyOpenProjects()
+            }
+            listMyProjectsInProgressButton.setOnClickListener {
+                viewModel.loadMyProjectsInProgress()
+            }
+            listMyProjectsButton.setOnClickListener {
+                viewModel.loadMyProjects()
+            }
+            listAllOpenProjectsButton.setOnClickListener {
+                viewModel.loadOpenProjects()
+            }
+        }
+    }
+
+    private fun setupFreelancerFilterButtons(profile: Profile.Freelancer) {
+        with(binding) {
+            listProjectsAssignedToMeButton.setOnClickListener {
+                viewModel.loadProjectsAssignedToMe()
+            }
+            listProjectsWhereIHaveOfferFreelancerButton.setOnClickListener {
+                viewModel.loadProjectsWhereIHaveOfferFreelancer()
+            }
+            listOpenProjectsMatchingMySkillsButton.setOnClickListener {
+                viewModel.loadOpenProjectsMatchingMySkills(profile.skills)
+            }
+            listAllOpenProjectsButton.setOnClickListener {
+                viewModel.loadOpenProjects()
+            }
+        }
     }
 
     private fun setupAddProjectFAB() {
@@ -55,43 +86,51 @@ class ListProjectsFragment : BaseFragment() {
         }
     }
 
-    private fun setupBindng() {
-        binding = FragmentListProjectsBinding.inflate(layoutInflater)
-    }
-
     private fun observeViewModel() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.profile.collect { profile ->
-                    Timber.d("Profile: $profile")
-                    profile?.let {
-                        setupContent(it)
-                    }
+        observeStateFlowOnStarted {
+            viewModel.profile.collect { profile ->
+                Timber.d("Profile: $profile")
+                profile?.let {
+                    setupContent(it)
                 }
             }
         }
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.projects.collect { projects ->
-                    projects?.let { adapter.submitList(it) }
-                }
+        observeStateFlowOnStarted {
+            viewModel.projects.collect { projects ->
+                projects?.let { adapter.submitList(it) }
             }
         }
-        observeLoading(viewModel)
-        observeErrorString(viewModel)
-        observeErrorResourceCode(viewModel)
+        observeLoading(viewModel.isLoading)
+        observeErrorString(viewModel.errorString) { viewModel.errorStringHandled() }
+        observeErrorResourceCode(viewModel.errorResourceCode) { viewModel.errorResourceCodeHandled() }
     }
 
     private fun setupContent(profile: Profile) {
-        when (profile) {
-            is Profile.Client -> {
-                binding.addProjectFloatingActionButton.visibility = View.VISIBLE
-                viewModel.loadMyProjects()
-            }
+        with(binding) {
+            when (profile) {
+                is Profile.Client -> {
+                    addProjectFloatingActionButton.visibility = View.VISIBLE
+                    listMyProjectsButton.visibility = View.VISIBLE
+                    listMyOpenProjectsButton.visibility = View.VISIBLE
+                    listMyProjectsInProgressButton.visibility = View.VISIBLE
+                    listProjectsAssignedToMeButton.visibility = View.GONE
+                    listProjectsWhereIHaveOfferFreelancerButton.visibility = View.GONE
+                    listOpenProjectsMatchingMySkillsButton.visibility = View.GONE
+                    viewModel.loadMyProjects()
+                    setupClientFilterButtons()
+                }
 
-            is Profile.Freelancer -> {
-                binding.addProjectFloatingActionButton.visibility = View.GONE
-                viewModel.loadOpenProjects()
+                is Profile.Freelancer -> {
+                    addProjectFloatingActionButton.visibility = View.GONE
+                    listMyProjectsButton.visibility = View.GONE
+                    listMyOpenProjectsButton.visibility = View.GONE
+                    listMyProjectsInProgressButton.visibility = View.GONE
+                    listProjectsAssignedToMeButton.visibility = View.VISIBLE
+                    listProjectsWhereIHaveOfferFreelancerButton.visibility = View.VISIBLE
+                    listOpenProjectsMatchingMySkillsButton.visibility = View.VISIBLE
+                    viewModel.loadOpenProjects()
+                    setupFreelancerFilterButtons(profile)
+                }
             }
         }
         setupAdapter(profile)
