@@ -1,5 +1,6 @@
 package com.jorgetargz.projectseeker.data.remote
 
+import com.jorgetargz.projectseeker.data.dto.users.AddDeviceDTO
 import com.jorgetargz.projectseeker.data.dto.users.ChangeUserRoleDTO
 import com.jorgetargz.projectseeker.data.dto.users.ModifyClientProfileDTO
 import com.jorgetargz.projectseeker.data.dto.users.ModifyFreelancerProfileDTO
@@ -23,6 +24,8 @@ class UsersRemoteDataSource @Inject constructor(
 
     suspend fun modifyClientProfile(modifyClientProfileDTO: ModifyClientProfileDTO) =
         safeSpringApiCall.safeApiCall { usersServices.modifyClientProfile(modifyClientProfileDTO) }
+
+    suspend fun addDevice(addDeviceDTO: AddDeviceDTO) = safeSpringApiCall.safeApiCall { usersServices.addDevice(addDeviceDTO) }
 
     suspend fun deleteAccount() = safeSpringApiCall.safeApiCall { usersServices.deleteAccount() }
 }

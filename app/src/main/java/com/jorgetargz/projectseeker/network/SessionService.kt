@@ -7,8 +7,8 @@ import retrofit2.http.POST
 interface SessionService {
 
     @POST("session/login")
-    suspend fun login(@Header("Authorization") bearerAuth: String): Response<Void>
+    suspend fun login(@Header("Authorization") bearerAuth: String): Response<Unit>
 
     @POST("session/logout-everywhere")
-    suspend fun logoutEverywhere(): Response<Void>
+    suspend fun logoutEverywhere(): Response<Unit>
 }

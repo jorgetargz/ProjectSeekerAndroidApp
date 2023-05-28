@@ -1,5 +1,6 @@
 package com.jorgetargz.projectseeker.network
 
+import com.jorgetargz.projectseeker.data.dto.users.AddDeviceDTO
 import com.jorgetargz.projectseeker.data.dto.users.ChangeUserRoleDTO
 import com.jorgetargz.projectseeker.data.dto.users.ModifyClientProfileDTO
 import com.jorgetargz.projectseeker.data.dto.users.ModifyFreelancerProfileDTO
@@ -8,6 +9,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Query
 
@@ -27,6 +29,9 @@ interface UsersServices {
 
     @PUT("secured/users/modifyClientProfile")
     suspend fun modifyClientProfile(@Body modifyClientProfileDTO: ModifyClientProfileDTO): Response<ProfileDTO>
+
+    @POST("secured/users/addDevice")
+    suspend fun addDevice(@Body addDeviceDTO: AddDeviceDTO): Response<Unit>
 
     @DELETE("secured/users/deleteMyAccount")
     suspend fun deleteAccount(): Response<Unit>

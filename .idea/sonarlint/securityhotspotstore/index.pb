@@ -54,7 +54,5 @@ Napp/src/main/java/com/jorgetargz/projectseeker/domain/project/ProjectStatus.kt
 Lapp/src/main/java/com/jorgetargz/projectseeker/domain/project/OfferStatus.kt,2\1\214f1399b83ef9e45441c6606ec2672a2138dd82
 {
 Kapp/src/main/java/com/jorgetargz/projectseeker/data/dto/users/ProfileDTO.kt,a\7\a71c11ff1c83c410ad9168baaac4e9f1ef169556
-ê
-`app/src/main/java/com/jorgetargz/projectseeker/network/interceptors/SpringBootAuthInterceptor.kt,9\c\9c979342fcfda2d8ba5a9ab19e2f944b50f20395
 y
 Iapp/src/main/java/com/jorgetargz/projectseeker/framework/ProjectSeeker.kt,3\d\3d6e58e23a49fe2db4a67ee67c14585d6361ac6a

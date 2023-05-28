@@ -20,7 +20,7 @@ class SpringSessionRemoteSource @Inject constructor(
     private val encryptedSharedPreferencesManager: EncryptedSharedPreferencesManager
 ) {
 
-    fun login(bearerAuth: String): Flow<NetworkResult<Nothing?>> {
+    fun login(bearerAuth: String): Flow<NetworkResult<Unit>> {
         return flow {
             emit(NetworkResult.Loading())
             val response = sessionService.login(bearerAuth)
@@ -29,9 +29,9 @@ class SpringSessionRemoteSource @Inject constructor(
                     val sessionCookie = headers.toHeaderList().firstOrNull { it.value.toString().contains("session") }
                     sessionCookie?.let {
                         encryptedSharedPreferencesManager.set("sessionCookie", sessionCookie.value.utf8())
-                        emit(NetworkResult.Success(null))
+                        emit(NetworkResult.Success(Unit))
                     } ?: run {
-                        emit(NetworkResult.Error<Nothing?>("No session cookie found"))
+                        emit(NetworkResult.Error<Unit>("No session cookie found"))
                     }
                 }
             } else {
@@ -41,7 +41,7 @@ class SpringSessionRemoteSource @Inject constructor(
                     reader.isLenient = true
                     springErrorDTO = gson.fromJson(reader, SpringErrorDTO::class.java)
                     Timber.e(springErrorDTO.toString())
-                    emit(NetworkResult.Error<Nothing?>(springErrorDTO.message, springErrorDTO))
+                    emit(NetworkResult.Error<Unit>(springErrorDTO.message, springErrorDTO))
                 }
             }
         }.flowOn(Dispatchers.IO)

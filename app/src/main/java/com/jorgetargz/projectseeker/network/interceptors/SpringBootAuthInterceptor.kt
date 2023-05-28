@@ -1,12 +1,9 @@
 package com.jorgetargz.projectseeker.network.interceptors
 
 
-import android.content.Context
-import android.content.SharedPreferences
 import com.google.firebase.auth.FirebaseAuth
 import com.jorgetargz.projectseeker.data.shared_preferences.EncryptedSharedPreferencesManager
 import com.jorgetargz.projectseeker.network.commom.Config
-import dagger.hilt.android.qualifiers.ApplicationContext
 import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -16,7 +13,6 @@ import java.util.concurrent.CompletableFuture
 import javax.inject.Inject
 
 class SpringBootAuthInterceptor @Inject constructor(
-    @ApplicationContext private val context: Context,
     private val firebaseAuth: FirebaseAuth,
     private val encryptedSharedPreferencesManager: EncryptedSharedPreferencesManager
 ) : Interceptor {
@@ -34,8 +30,6 @@ class SpringBootAuthInterceptor @Inject constructor(
                     .build()
             )
             return if (response.code != 401) {
-                //TODO: Remove this log after testing
-                Timber.tag("Cookie").d(it)
                 response
             } else {
                 response.close()
@@ -67,6 +61,7 @@ class SpringBootAuthInterceptor @Inject constructor(
             token = tokenCompletableFuture.get()
         } catch (e: Exception) {
             // If the token could not be retrieved, return the original request
+            Timber.e(e.message, e)
             return chain.proceed(original)
         }
 

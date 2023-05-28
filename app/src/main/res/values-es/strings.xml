@@ -157,4 +157,25 @@
     <string name="email_not_verified">Email no verificado</string>
     <string name="email_not_verified_message">Por favor verifica tu email</string>
     <string name="resend_verification_email">Enviar email de verificacion</string>
+    <string name="change_password_message">Enviar email para cambiar la contraseña</string>
+    <string name="delete_account">Eliminar cuenta</string>
+    <string name="delete_account_message">Eliminaras todos tus perfiles, necesitaras registrarte de nuevo</string>
+    <string name="account_deleted">Cuenta eliminada</string>
+    <string name="account_deleted_message">Tu cuenta ha ssido eliminada</string>
+    <string name="ok">OK</string>
+    <string name="show_my_open_projects">Ver mis projectos abiertos</string>
+    <string name="show_projects_where_i_have_offer">Ver projectos donde he hecho oferta</string>
+    <string name="show_projects_assigned_to_me">Ver projectos asignados a mi</string>
+    <string name="show_my_projects">Ver mis projectos</string>
+    <string name="show_my_projects_in_progress">Ver mis projectos en progreso</string>
+    <string name="show_all_open_projects">Ver todos los projectos abiertos</string>
+    <string name="show_open_projects_matching_my_skills">Ver los projectos abiertos con mis habilidades</string>
+    <string name="error_get_projects">Error al obtener projectos</string>
+    <string name="no_offers">No hay ofertas</string>
+    <string name="you_need_to_register">Registrate primero o use Google</string>
+    <string name="notification_permission_title">Notificaciones</string>
+    <string name="notification_permission_message">Project Seeker usa notificaciones para mensajes yn novedades en tus projectos y ofertaas</string>
+    <string name="notification_permission_granted">Permiso de notificaciones concedido</string>
+    <string name="notification_permission_denied">Permiso de notificaciones denegado</string>
+    <string name="default_notification_channel_id">Notificaciones</string>
 </resources>

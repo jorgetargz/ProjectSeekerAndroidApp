@@ -1,5 +1,6 @@
 package com.jorgetargz.projectseeker.data
 
+import com.jorgetargz.projectseeker.data.dto.users.AddDeviceDTO
 import com.jorgetargz.projectseeker.data.dto.users.ChangeUserRoleDTO
 import com.jorgetargz.projectseeker.data.dto.users.ModifyClientProfileDTO
 import com.jorgetargz.projectseeker.data.dto.users.ModifyFreelancerProfileDTO
@@ -57,6 +58,14 @@ class UsersRepository @Inject constructor(
             emit(NetworkResult.Loading())
             val result = usersRemoteDataSource.modifyClientProfile(modifyClientProfileDTO)
             emit(profileNetworkResult(result))
+        }.flowOn(Dispatchers.IO)
+    }
+
+    fun addDevice(addDeviceDTO: AddDeviceDTO) : Flow<NetworkResult<Unit>> {
+        return flow {
+            emit(NetworkResult.Loading())
+            val result = usersRemoteDataSource.addDevice(addDeviceDTO)
+            emit(result)
         }.flowOn(Dispatchers.IO)
     }
 

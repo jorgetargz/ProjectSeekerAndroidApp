@@ -7,17 +7,23 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.functions.FirebaseFunctions
+import com.google.firebase.messaging.FirebaseMessaging
 import com.jorgetargz.projectseeker.R
+import com.jorgetargz.projectseeker.data.UsersRepository
+import com.jorgetargz.projectseeker.data.dto.users.AddDeviceDTO
 import com.jorgetargz.projectseeker.framework.common.BaseViewModel
 import com.jorgetargz.projectseeker.network.session.SpringSessionRemoteSource
 import com.jorgetargz.projectseeker.network.commom.NetworkResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.getstream.chat.android.client.ChatClient
+import io.getstream.chat.android.client.models.Device
+import io.getstream.chat.android.client.models.PushProvider
 import io.getstream.chat.android.client.models.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 import java.net.URL
 import javax.inject.Inject
@@ -25,8 +31,10 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val springSessionRemoteSource: SpringSessionRemoteSource,
+    private val usersRepository: UsersRepository,
     private val firebaseAuth: FirebaseAuth,
     private val firebaseFunctions: FirebaseFunctions,
+    private val firebaseMessaging: FirebaseMessaging,
     private val chatClient: ChatClient,
 ) : BaseViewModel() {
 
@@ -72,6 +80,7 @@ class LoginViewModel @Inject constructor(
                     is NetworkResult.Success -> {
                         if (checkIfUserIsRegistered()) {
                             streamChatLogin()
+                            sendFCMToken()
                         } else {
                             deleteUnregisteredUser()
                             _errorResourceCode.value = R.string.you_need_to_register
@@ -81,6 +90,44 @@ class LoginViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun sendFCMToken() {
+        viewModelScope.launch {
+            val token = firebaseMessaging.token.await()
+            val addDeviceDTO = AddDeviceDTO(token)
+            usersRepository.addDevice(addDeviceDTO).catch {
+                Timber.e(it)
+                _errorResourceCode.value = R.string.error_login
+                _isLoading.value = false
+            }.collect {
+                when (it) {
+                    is NetworkResult.Loading -> _isLoading.value = true
+                    is NetworkResult.Error -> {
+                        handleNetworkError(it)
+                    }
+
+                    is NetworkResult.Success -> {
+                        Timber.d("FCM Token sent")
+                        _isLoading.value = false
+                    }
+                }
+            }
+            chatClient.addDevice(
+                Device(
+                    token = token,
+                    pushProvider = PushProvider.FIREBASE,
+                    providerName = "firebase-push", // Optional, if adding to multi-bundle named provider
+                )
+            ).enqueue { result ->
+                if (result.isSuccess) {
+                    Timber.d("Success adding device to Stream Chat")
+                } else {
+                    Timber.e(result.error().message, result.error())
+                }
+            }
+        }
+
     }
 
     private fun deleteUnregisteredUser() {
