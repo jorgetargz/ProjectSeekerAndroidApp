@@ -139,6 +139,23 @@ class LoginViewModel @Inject constructor(
                 Timber.e(it.exception)
             }
         }
+        viewModelScope.launch {
+            usersRepository.deleteAccount().catch {
+                Timber.e(it)
+            }.collect {
+                when (it) {
+                    is NetworkResult.Loading -> _isLoading.value = true
+                    is NetworkResult.Error -> {
+                        handleNetworkError(it)
+                    }
+
+                    is NetworkResult.Success -> {
+                        Timber.d("Not registered user deleted from backend")
+                        _isLoading.value = false
+                    }
+                }
+            }
+        }
     }
 
     private fun checkIfUserIsRegistered(): Boolean {
