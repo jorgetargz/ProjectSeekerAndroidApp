@@ -25,7 +25,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
         android:text="@string/show_my_open_projects"
-        app:layout_constraintBottom_toTopOf="@id/addProjectFloatingActionButton"
+        app:layout_constraintBottom_toTopOf="@id/displayFilterButtonsFab"
         app:layout_constraintEnd_toEndOf="parent" />
 
     <com.google.android.material.button.MaterialButton
@@ -90,5 +90,20 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:contentDescription="@string/add_project" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/displayFilterButtonsFab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:visibility="visible"
+        android:clickable="true"
+        android:focusable="true"
+        android:src="@drawable/ic_filter_list"
+        app:fabSize="normal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/addProjectFloatingActionButton"
+        android:contentDescription="@string/display_filters" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

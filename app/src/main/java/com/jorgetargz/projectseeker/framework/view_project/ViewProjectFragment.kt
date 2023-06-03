@@ -41,7 +41,7 @@ class ViewProjectFragment : BaseFragment() {
         }
 
         override fun onViewProfile(freelancerId: String) {
-            viewModel.viewFreelancerProfile(freelancerId)
+            viewModel.viewProfile(freelancerId)
         }
     }
 
@@ -64,6 +64,7 @@ class ViewProjectFragment : BaseFragment() {
                 if (viewProjectState.clientProfile != null) {
                     binding.tvProjectClient.text = viewProjectState.clientProfile.name
                     setupChatWithClientButton(viewProjectState.clientProfile.firebaseId)
+                    setupViewClientProfileButton(viewProjectState.clientProfile.id)
                 }
                 if (viewProjectState.assignedFreelancer != null) {
                     binding.tvProjectFreelancer.text = viewProjectState.assignedFreelancer.name
@@ -78,25 +79,53 @@ class ViewProjectFragment : BaseFragment() {
                             chatCID
                         )
                     findNavController().navigate(action)
+                    binding.btnChatWithClient.isEnabled = true
                     viewModel.resetChatCID()
                 }
             }
         }
         observeStateFlowOnStarted {
-            viewModel.viewFreelancerProfileState.collect { profile ->
+            viewModel.viewProfileState.collect { profile ->
                 profile?.let {
                     if (profile is Profile.Freelancer) {
                         showFreelancerProfileDialog(profile)
+                    } else if (profile is Profile.Client) {
+                        showCLientProfileDialog(profile)
                     } else {
                         showSnackbar(getString(R.string.error_viewing_profile))
                     }
-                    viewModel.resetViewFreelancerProfileState()
+                    viewModel.resetViewProfileState()
+                }
+            }
+        }
+        observeStateFlowOnStarted {
+            viewModel.offerSubmitted.collect { offer ->
+                offer?.let {
+                    showOfferDialog(offer)
+                    viewModel.resetOfferSubmitted()
                 }
             }
         }
         observeLoading(viewModel.isLoading)
         observeErrorString(viewModel.errorString) { viewModel.errorStringHandled() }
         observeErrorResourceCode(viewModel.errorResourceCode) { viewModel.errorResourceCodeHandled() }
+    }
+
+    private fun showOfferDialog(offer: Offer) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.offer_submitted))
+            .setMessage(offer.description + " " + getString(R.string.project_budget_label) + " " + offer.budget)
+            .setPositiveButton(getString(R.string.close)) { dialog, _ ->
+                dialog.dismiss()
+            }
+            .create()
+            .show()
+    }
+
+    private fun setupViewClientProfileButton(clientId: String) {
+        binding.btnViewClientProfile.setOnClickListener {
+            viewModel.viewProfile(clientId)
+        }
     }
 
     private fun showFreelancerProfileDialog(profile: Profile.Freelancer) {
@@ -121,10 +150,33 @@ class ViewProjectFragment : BaseFragment() {
         dialog.show()
     }
 
+    private fun showCLientProfileDialog(profile: Profile.Client) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_view_profile, binding.root, false)
+        dialogView.findViewById<MaterialTextView>(R.id.tvProfileName).text = profile.name
+        dialogView.findViewById<MaterialTextView>(R.id.tvProfileTitle).text = profile.title
+        dialogView.findViewById<MaterialTextView>(R.id.tvProfileDescription).text =
+            profile.description
+        dialogView.findViewById<MaterialTextView>(R.id.tvSkills).visibility = View.GONE
+        dialogView.findViewById<MaterialTextView>(R.id.tvSkillsLabel).visibility = View.GONE
+
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setView(dialogView)
+            .setPositiveButton(getString(R.string.open_chat)) { dialog, _ ->
+                viewModel.createOrObtainCIDOfChannelByUserId(profile.firebaseId)
+                dialog.dismiss()
+            }
+            .setNegativeButton(getString(R.string.close)) { dialog, _ ->
+                dialog.dismiss()
+            }
+            .create()
+        dialog.show()
+    }
+
     private fun setupChatWithClientButton(clientFirebaseId: String) {
         with(binding) {
             btnChatWithClient.visibility = View.VISIBLE
             btnChatWithClient.setOnClickListener {
+                btnChatWithClient.isEnabled = false
                 viewModel.createOrObtainCIDOfChannelByUserId(clientFirebaseId)
             }
         }
@@ -164,12 +216,16 @@ class ViewProjectFragment : BaseFragment() {
         profile: Profile
     ) {
         with(binding) {
-            if (profile.activeRole == ActiveRole.FREELANCER) {
+            if (profile.activeRole == ActiveRole.FREELANCER && project.clientId != profile.id) {
                 btnChatWithClient.visibility = View.VISIBLE
                 btnSubmitOffer.visibility = View.VISIBLE
                 btnSubmitOffer.setOnClickListener {
                     showSubmitOfferDialog(project.id, profile.id)
                 }
+            }
+            val offerSubmitted = project.offers.firstOrNull { offer -> offer.freelancerId == profile.id }
+            offerSubmitted?.let {
+                showOfferDialog(offerSubmitted)
             }
         }
     }
@@ -187,6 +243,7 @@ class ViewProjectFragment : BaseFragment() {
                         viewModel.finishProject(project.id)
                     }
                 }
+                btnViewClientProfile.visibility = View.GONE
                 btnChatWithClient.visibility = View.GONE
                 rvOffers.visibility = View.VISIBLE
                 tvOffersLabel.visibility = View.VISIBLE
@@ -232,14 +289,18 @@ class ViewProjectFragment : BaseFragment() {
             .setView(R.layout.dialog_submit_offer)
             .setPositiveButton(getString(R.string.submit)) { dialog1, _ ->
                 val dialog = dialog1 as Dialog
-                val offer = Offer(
-                    freelancerId = profileId,
-                    budget = dialog.findViewById<EditText>(R.id.etBudget).text.toString()
-                        .toDouble(),
-                    description = dialog.findViewById<EditText>(R.id.etDescription).text.toString(),
-                    status = OfferStatus.PENDING
-                )
-                viewModel.submitOffer(offer, projectId)
+                try {
+                    val offer = Offer(
+                        freelancerId = profileId,
+                        budget = dialog.findViewById<EditText>(R.id.etBudget).text.toString()
+                            .toDouble(),
+                        description = dialog.findViewById<EditText>(R.id.etDescription).text.toString(),
+                        status = OfferStatus.PENDING
+                    )
+                    viewModel.submitOffer(offer, projectId)
+                } catch (e: NumberFormatException) {
+                    showSnackbar(getString(R.string.budget_must_be_number))
+                }
             }
             .setNegativeButton(getString(R.string.cancel)) { _, _ -> }
             .create()

@@ -162,14 +162,6 @@ class LoginFragment() : BaseAuthFragment() {
 
     private fun observeViewModel() {
         observeStateFlowOnStarted {
-            viewModel.firebaseUser.collect { user ->
-                user?.let {
-                    viewModel.getIDTokenAndLogin()
-                    viewModel.firebaseUserHandled()
-                }
-            }
-        }
-        observeStateFlowOnStarted {
             viewModel.logged.collect { user ->
                 user?.let {
                     logInDone(it)

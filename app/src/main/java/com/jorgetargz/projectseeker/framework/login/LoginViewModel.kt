@@ -12,8 +12,9 @@ import com.jorgetargz.projectseeker.R
 import com.jorgetargz.projectseeker.data.UsersRepository
 import com.jorgetargz.projectseeker.data.dto.users.AddDeviceDTO
 import com.jorgetargz.projectseeker.framework.common.BaseViewModel
-import com.jorgetargz.projectseeker.network.session.SpringSessionRemoteSource
+import com.jorgetargz.projectseeker.framework.common.Constants
 import com.jorgetargz.projectseeker.network.commom.NetworkResult
+import com.jorgetargz.projectseeker.network.session.SpringSessionRemoteSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.getstream.chat.android.client.ChatClient
 import io.getstream.chat.android.client.models.Device
@@ -38,9 +39,9 @@ class LoginViewModel @Inject constructor(
     private val chatClient: ChatClient,
 ) : BaseViewModel() {
 
-    // Firebase User State Flow
-    private val _firebaseUser = MutableStateFlow(firebaseAuth.currentUser)
-    val firebaseUser: StateFlow<FirebaseUser?> = _firebaseUser
+    init {
+        firebaseAuth.currentUser?.let { getIDTokenAndLogin() }
+    }
 
     private val _logged = MutableStateFlow<FirebaseUser?>(null) // private mutable live data
     val logged: StateFlow<FirebaseUser?> = _logged
@@ -78,89 +79,12 @@ class LoginViewModel @Inject constructor(
                     }
 
                     is NetworkResult.Success -> {
-                        if (checkIfUserIsRegistered()) {
-                            streamChatLogin()
-                            sendFCMToken()
-                        } else {
-                            deleteUnregisteredUser()
-                            _errorResourceCode.value = R.string.you_need_to_register
-                            _isLoading.value = false
-                        }
+                        streamChatLogin()
+                        sendFCMToken()
                     }
                 }
             }
         }
-    }
-
-    private fun sendFCMToken() {
-        viewModelScope.launch {
-            val token = firebaseMessaging.token.await()
-            val addDeviceDTO = AddDeviceDTO(token)
-            usersRepository.addDevice(addDeviceDTO).catch {
-                Timber.e(it)
-                _errorResourceCode.value = R.string.error_login
-                _isLoading.value = false
-            }.collect {
-                when (it) {
-                    is NetworkResult.Loading -> _isLoading.value = true
-                    is NetworkResult.Error -> {
-                        handleNetworkError(it)
-                    }
-
-                    is NetworkResult.Success -> {
-                        Timber.d("FCM Token sent")
-                        _isLoading.value = false
-                    }
-                }
-            }
-            chatClient.addDevice(
-                Device(
-                    token = token,
-                    pushProvider = PushProvider.FIREBASE,
-                    providerName = "firebase-push", // Optional, if adding to multi-bundle named provider
-                )
-            ).enqueue { result ->
-                if (result.isSuccess) {
-                    Timber.d("Success adding device to Stream Chat")
-                } else {
-                    Timber.e(result.error().message, result.error())
-                }
-            }
-        }
-
-    }
-
-    private fun deleteUnregisteredUser() {
-        val currentUser = firebaseAuth.currentUser
-        currentUser?.delete()?.addOnCompleteListener {
-            if (it.isSuccessful) {
-                Timber.d("Not registered user deleted")
-            } else {
-                Timber.e(it.exception)
-            }
-        }
-        viewModelScope.launch {
-            usersRepository.deleteAccount().catch {
-                Timber.e(it)
-            }.collect {
-                when (it) {
-                    is NetworkResult.Loading -> _isLoading.value = true
-                    is NetworkResult.Error -> {
-                        handleNetworkError(it)
-                    }
-
-                    is NetworkResult.Success -> {
-                        Timber.d("Not registered user deleted from backend")
-                        _isLoading.value = false
-                    }
-                }
-            }
-        }
-    }
-
-    private fun checkIfUserIsRegistered(): Boolean {
-        val currentUser = firebaseAuth.currentUser
-        return currentUser?.displayName != null && currentUser.email != null
     }
 
     private fun streamChatLogin() {
@@ -176,28 +100,64 @@ class LoginViewModel @Inject constructor(
                 image = currentUser.photoUrl.toString(),
                 name = currentUser.displayName!!,
             )
-            val url = URL("https://europe-west1-hireme-tfg.cloudfunctions.net/ext-auth-chat-getStreamUserToken")
-            firebaseFunctions.getHttpsCallableFromUrl(url).call().addOnCompleteListener {
-                if (it.isSuccessful) {
-                    val token = it.result?.data as String
-                    chatClient.connectUser(
-                        user = streamUser,
-                        token = token
-                    ).enqueue { result ->
-                        if (result.isSuccess) {
-                            Timber.d("Success Connection to Stream Chat")
-                            _logged.value = firebaseAuth.currentUser
-                            _isLoading.value = false
-                        } else {
-                            _errorResourceCode.value = R.string.stream_login_error
-                            Timber.e(result.error().message.toString())
-                            _isLoading.value = false
+
+            firebaseFunctions.getHttpsCallableFromUrl(URL(Constants.GET_CHAT_TOKEN_FUNCTION_URL))
+                .call().addOnCompleteListener {
+                    if (it.isSuccessful) {
+                        val token = it.result?.data as String
+                        chatClient.connectUser(
+                            user = streamUser,
+                            token = token
+                        ).enqueue { result ->
+                            if (result.isSuccess) {
+                                Timber.d("Success Connection to Stream Chat")
+                                _logged.value = firebaseAuth.currentUser
+                                _isLoading.value = false
+                            } else {
+                                _errorResourceCode.value = R.string.stream_login_error
+                                Timber.e(result.error().cause)
+                                _isLoading.value = false
+                            }
                         }
+                    } else {
+                        _errorResourceCode.value = R.string.stream_login_error
+                        Timber.e(it.exception)
+                        _isLoading.value = false
                     }
+                }
+        }
+    }
+
+    private fun sendFCMToken() {
+        viewModelScope.launch {
+            val token = firebaseMessaging.token.await()
+            val addDeviceDTO = AddDeviceDTO(token)
+            usersRepository.addDevice(addDeviceDTO).catch {
+                Timber.e(it)
+                _errorResourceCode.value = R.string.error_login
+            }.collect {
+                when (it) {
+                    is NetworkResult.Loading -> {} //Do Nothing
+                    is NetworkResult.Error -> {
+                        handleNetworkError(it)
+                    }
+
+                    is NetworkResult.Success -> {
+                        Timber.d("FCM Token sent")
+                    }
+                }
+            }
+            chatClient.addDevice(
+                Device(
+                    token = token,
+                    pushProvider = PushProvider.FIREBASE,
+                    providerName = "firebase-push", // Optional, if adding to multi-bundle named provider
+                )
+            ).enqueue { result ->
+                if (result.isSuccess) {
+                    Timber.d("Success adding device to Stream Chat")
                 } else {
-                    _errorResourceCode.value = R.string.stream_login_error
-                    Timber.e(it.exception)
-                    _isLoading.value = false
+                    Timber.e(result.error().cause)
                 }
             }
         }
@@ -210,15 +170,14 @@ class LoginViewModel @Inject constructor(
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     // Sign in success, update UI with the signed-in user's information
-                    Timber.d("signInWithCredential:success")
-                    val user = this.firebaseAuth.currentUser
-                    user?.let { _firebaseUser.value = it }
+                    Timber.d("signInWithGoogle:success")
+                    getIDTokenAndLogin()
                 } else {
                     // If sign in fails, display a message to the user.
                     _errorResourceCode.value = R.string.authentication_failed
-                    Timber.d("signInWithCredential:failure", task.exception)
+                    Timber.w(task.exception)
+                    _isLoading.value = false
                 }
-                _isLoading.value = false
             }
     }
 
@@ -232,12 +191,14 @@ class LoginViewModel @Inject constructor(
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     Timber.d("signInWithEmail:success")
-                    this.firebaseAuth.currentUser?.let { _firebaseUser.value = it }
+                    this.firebaseAuth.currentUser?.let { getIDTokenAndLogin() } ?: run {
+                        _isLoading.value = false
+                    }
                 } else {
                     Timber.w(task.exception, "signInWithEmail:failure")
                     _errorResourceCode.value = R.string.authentication_failed
+                    _isLoading.value = false
                 }
-                _isLoading.value = false
             }
     }
 
@@ -246,18 +207,42 @@ class LoginViewModel @Inject constructor(
         firebaseAuth.signInWithCredential(credential)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    Timber.d("signInWithCredential:success")
-                    task.result?.user?.let { _firebaseUser.value = it }
+                    Timber.d("signInWithPhone:success")
+                    if (checkIfUserIsValid()) {
+                        task.result?.user?.let { getIDTokenAndLogin() } ?: run {
+                            _isLoading.value = false
+                        }
+                    } else {
+                        deleteInvalidUser()
+                        _errorResourceCode.value = R.string.you_need_to_register
+                        _isLoading.value = false
+                    }
                 } else {
-                    Timber.d("signInWithCredential:failure", task.exception)
+                    Timber.d("signInWithPhone:failure", task.exception)
                     if (task.exception is FirebaseAuthInvalidCredentialsException) {
                         _errorResourceCode.value = R.string.invalid_code
                     } else {
                         _errorResourceCode.value = R.string.authentication_failed
                     }
+                    _isLoading.value = false
                 }
-                _isLoading.value = false
             }
+    }
+
+    private fun deleteInvalidUser() {
+        val currentUser = firebaseAuth.currentUser
+        currentUser?.delete()?.addOnCompleteListener {
+            if (it.isSuccessful) {
+                Timber.d("Not registered user deleted")
+            } else {
+                Timber.e(it.exception)
+            }
+        }
+    }
+
+    private fun checkIfUserIsValid(): Boolean {
+        val currentUser = firebaseAuth.currentUser
+        return currentUser?.displayName != null && currentUser.email != null
     }
 
     fun firebaseSendPasswordResetEmail(email: String) {
@@ -275,13 +260,8 @@ class LoginViewModel @Inject constructor(
             }
     }
 
-    fun firebaseUserHandled() {
-        _firebaseUser.value = null
-    }
-
     fun userLoggedHandled() {
         _logged.value = null
     }
-
 
 }

@@ -119,7 +119,7 @@
     <string name="profile_description">Descripción</string>
     <string name="profile_skills">Habilidades</string>
     <string name="profile_description_label">Descripción:</string>
-    <string name="error_viewing_profile">El usuario ha desactivado su perfil de freelance</string>
+    <string name="error_viewing_profile">El usuario ha desactivado sus perfiles</string>
     <string name="close">Cerrar</string>
     <string name="open_chat">Abrir chat</string>
     <string name="submit_budget">Presupuesto (€): </string>
@@ -145,10 +145,10 @@
     <string name="error_opening_chat">Error al abrir el chat</string>
     <string name="yes_button">Sí</string>
     <string name="no_button">No</string>
-    <string name="logout_exit_title">Cerrar sesión y salir</string>
-    <string name="logout_exit_message">¿Estás seguro de que quieres cerrar sesión y salir de la aplicación?</string>
+    <string name="logout_exit_title">Cerrar sesión</string>
+    <string name="logout_exit_message">¿Estás seguro de que quieres cerrar sesión?</string>
     <string name="logout_everywhere_title">Cerrar sesión en todas partes</string>
-    <string name="logout_everywhere_message">¿Estás seguro de que quieres cerrar sesión en todas partes y salir de la aplicación?</string>
+    <string name="logout_everywhere_message">¿Estás seguro de que quieres cerrar sesión en todas partes?</string>
     <string name="login">Iniciar sesion</string>
     <string name="forgot_password">Recuperar contraseña</string>
     <string name="change_password">Cambiar contraseña</string>
@@ -178,4 +178,7 @@
     <string name="notification_permission_granted">Permiso de notificaciones concedido</string>
     <string name="notification_permission_denied">Permiso de notificaciones denegado</string>
     <string name="default_notification_channel_id">Notificaciones</string>
+    <string name="display_filters">Ver Filtros</string>
+    <string name="budget_must_be_number">Presupuesto ha de ser numero</string>
+    <string name="offer_submitted">Propuesta enviada</string>
 </resources>

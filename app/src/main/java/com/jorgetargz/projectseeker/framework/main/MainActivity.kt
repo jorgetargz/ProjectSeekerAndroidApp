@@ -48,16 +48,20 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.logoutDone.collect { logOutDone ->
-                   if (logOutDone) { finish() }
+                    if (logOutDone) {
+                        navController.popBackStack(R.id.loginFragment, false)
+                    }
                 }
             }
         }
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.numberOfUnreadMessages.collect { unReadMessages ->
-                    val menuItem = findViewById<NavigationView>(R.id.nav_view).menu.findItem(R.id.channelFragment)
+                    val menuItem =
+                        findViewById<NavigationView>(R.id.nav_view).menu.findItem(R.id.channelFragment)
                     if (unReadMessages != 0) {
-                        menuItem.title = "${getString(R.string.channels_fragment_title)} ($unReadMessages)"
+                        menuItem.title =
+                            "${getString(R.string.channels_fragment_title)} ($unReadMessages)"
                     } else {
                         menuItem.title = getString(R.string.channels_fragment_title)
                     }
@@ -81,7 +85,11 @@ class MainActivity : AppCompatActivity() {
         val navView = findViewById<NavigationView>(R.id.nav_view)
         appBarConfiguration = AppBarConfiguration(
             setOf(
-                R.id.homeFragment, R.id.channelFragment, R.id.chatFragment, R.id.profileFragment, R.id.listProjectsFragment
+                R.id.homeFragment,
+                R.id.channelFragment,
+                R.id.chatFragment,
+                R.id.profileFragment,
+                R.id.listProjectsFragment
             ), drawerLayout
         )
         setupActionBarWithNavController(navController, appBarConfiguration)

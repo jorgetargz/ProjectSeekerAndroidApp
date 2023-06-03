@@ -8,6 +8,7 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.jorgetargz.projectseeker.databinding.FragmentListProjectsBinding
+import com.jorgetargz.projectseeker.domain.user.ActiveRole
 import com.jorgetargz.projectseeker.domain.user.Profile
 import com.jorgetargz.projectseeker.framework.common.BaseFragment
 import com.jorgetargz.projectseeker.framework.common.adapters.projects.ProjectsActions
@@ -22,6 +23,7 @@ class ListProjectsFragment : BaseFragment() {
     private val binding: FragmentListProjectsBinding by lazy {
         FragmentListProjectsBinding.inflate(layoutInflater)
     }
+    private lateinit var viewerProfile: Profile
     private lateinit var adapter: ProjectsAdapter
 
     inner class ProjectsActionsImpl : ProjectsActions {
@@ -92,12 +94,21 @@ class ListProjectsFragment : BaseFragment() {
                 Timber.d("Profile: $profile")
                 profile?.let {
                     setupContent(it)
+                    viewerProfile = profile
                 }
             }
         }
         observeStateFlowOnStarted {
             viewModel.projects.collect { projects ->
-                projects?.let { adapter.submitList(it) }
+                projects?.let {
+                    if (viewerProfile.id.isNotEmpty() && viewerProfile.activeRole == ActiveRole.FREELANCER) {
+                        adapter.submitList(it.filter { project ->
+                            !project.clientId.contains(viewerProfile.id)
+                        })
+                    } else {
+                        adapter.submitList(it)
+                    }
+                }
             }
         }
         observeLoading(viewModel.isLoading)
@@ -109,31 +120,89 @@ class ListProjectsFragment : BaseFragment() {
         with(binding) {
             when (profile) {
                 is Profile.Client -> {
-                    addProjectFloatingActionButton.visibility = View.VISIBLE
-                    listMyProjectsButton.visibility = View.VISIBLE
-                    listMyOpenProjectsButton.visibility = View.VISIBLE
-                    listMyProjectsInProgressButton.visibility = View.VISIBLE
-                    listProjectsAssignedToMeButton.visibility = View.GONE
-                    listProjectsWhereIHaveOfferFreelancerButton.visibility = View.GONE
-                    listOpenProjectsMatchingMySkillsButton.visibility = View.GONE
                     viewModel.loadMyProjects()
                     setupClientFilterButtons()
+                    addProjectFloatingActionButton.visibility = View.VISIBLE
                 }
 
                 is Profile.Freelancer -> {
-                    addProjectFloatingActionButton.visibility = View.GONE
-                    listMyProjectsButton.visibility = View.GONE
-                    listMyOpenProjectsButton.visibility = View.GONE
-                    listMyProjectsInProgressButton.visibility = View.GONE
-                    listProjectsAssignedToMeButton.visibility = View.VISIBLE
-                    listProjectsWhereIHaveOfferFreelancerButton.visibility = View.VISIBLE
-                    listOpenProjectsMatchingMySkillsButton.visibility = View.VISIBLE
                     viewModel.loadOpenProjects()
                     setupFreelancerFilterButtons(profile)
+                    addProjectFloatingActionButton.visibility = View.GONE
                 }
             }
         }
         setupAdapter(profile)
+        setupDisplayFilterButtonsFab(profile)
+    }
+
+    private fun setupDisplayFilterButtonsFab(profile: Profile) {
+        hideAllFilterButtons()
+        with(binding) {
+            when (profile) {
+                is Profile.Client -> {
+                    var showFilters = false
+                    displayFilterButtonsFab.setOnClickListener {
+                        if (!showFilters) {
+                            showFilters = true
+                            showClientFilterButtons()
+                        } else {
+                            showFilters = false
+                            hideAllFilterButtons()
+                        }
+                    }
+                }
+
+                is Profile.Freelancer -> {
+                    var showFilters = false
+                    displayFilterButtonsFab.setOnClickListener {
+                        if (!showFilters) {
+                            showFilters = true
+                            showFreelancerFilterButtons()
+                        } else {
+                            showFilters = false
+                            hideAllFilterButtons()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun hideAllFilterButtons() {
+        with(binding) {
+            listAllOpenProjectsButton.visibility = View.GONE
+            listMyProjectsButton.visibility = View.GONE
+            listMyOpenProjectsButton.visibility = View.GONE
+            listMyProjectsInProgressButton.visibility = View.GONE
+            listProjectsAssignedToMeButton.visibility = View.GONE
+            listProjectsWhereIHaveOfferFreelancerButton.visibility = View.GONE
+            listOpenProjectsMatchingMySkillsButton.visibility = View.GONE
+        }
+    }
+
+    private fun showFreelancerFilterButtons() {
+        with(binding) {
+            listAllOpenProjectsButton.visibility = View.VISIBLE
+            listMyProjectsButton.visibility = View.GONE
+            listMyOpenProjectsButton.visibility = View.GONE
+            listMyProjectsInProgressButton.visibility = View.GONE
+            listProjectsAssignedToMeButton.visibility = View.VISIBLE
+            listProjectsWhereIHaveOfferFreelancerButton.visibility = View.VISIBLE
+            listOpenProjectsMatchingMySkillsButton.visibility = View.VISIBLE
+        }
+    }
+
+    private fun showClientFilterButtons() {
+        with(binding) {
+            listAllOpenProjectsButton.visibility = View.VISIBLE
+            listMyProjectsButton.visibility = View.VISIBLE
+            listMyOpenProjectsButton.visibility = View.VISIBLE
+            listMyProjectsInProgressButton.visibility = View.VISIBLE
+            listProjectsAssignedToMeButton.visibility = View.GONE
+            listProjectsWhereIHaveOfferFreelancerButton.visibility = View.GONE
+            listOpenProjectsMatchingMySkillsButton.visibility = View.GONE
+        }
     }
 
     private fun setupAdapter(profile: Profile) {

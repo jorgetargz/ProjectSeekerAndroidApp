@@ -15,6 +15,7 @@ import io.getstream.chat.android.client.models.Channel
 import io.getstream.chat.android.client.models.Filters
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -31,12 +32,18 @@ class ViewProjectViewModel @Inject constructor(
     private val _chatCID = MutableStateFlow<String?>(null)
     val chatCID: StateFlow<String?> = _chatCID
 
-    private val _viewFreelancerProfileState = MutableStateFlow<Profile?>(null)
-    val viewFreelancerProfileState: StateFlow<Profile?> = _viewFreelancerProfileState
+    private val _viewProfileState = MutableStateFlow<Profile?>(null)
+    val viewProfileState: StateFlow<Profile?> = _viewProfileState
+
+    private val _offerSubmitted = MutableStateFlow<Offer?>(null)
+    val offerSubmitted : StateFlow<Offer?> = _offerSubmitted
 
     fun getProjectInfo(projectId: String) {
         viewModelScope.launch {
-            viewProjectDataManager.getProjectInfo(projectId).collect { result ->
+            viewProjectDataManager.getProjectInfo(projectId).catch {
+                Timber.e(it)
+                _errorResourceCode.value = R.string.error_get_projects
+            }.collect { result ->
                 when (result) {
                     is NetworkResult.Loading -> {
                         _isLoading.value = true
@@ -59,7 +66,10 @@ class ViewProjectViewModel @Inject constructor(
 
     fun getMyProfile() {
         viewModelScope.launch {
-            viewProjectDataManager.getMyProfile().collect { result ->
+            viewProjectDataManager.getMyProfile().catch {
+                Timber.e(it)
+                _errorResourceCode.value = R.string.error_get_my_profile
+            }.collect { result ->
                 when (result) {
                     is NetworkResult.Loading -> {
                         _isLoading.value = true
@@ -82,7 +92,10 @@ class ViewProjectViewModel @Inject constructor(
 
     fun getClientProfileInfo(clientId: String) {
         viewModelScope.launch {
-            viewProjectDataManager.getProfile(clientId).collect { result ->
+            viewProjectDataManager.getProfile(clientId).catch {
+                Timber.e(it)
+                _errorResourceCode.value = R.string.error_get_projects
+            }.collect { result ->
                 when (result) {
                     is NetworkResult.Loading -> {
                         _isLoading.value = true
@@ -105,7 +118,10 @@ class ViewProjectViewModel @Inject constructor(
 
     fun getAssignedFreelancerProfileInfo(selectedFreelancerId: String) {
         viewModelScope.launch {
-            viewProjectDataManager.getProfile(selectedFreelancerId).collect { result ->
+            viewProjectDataManager.getProfile(selectedFreelancerId).catch {
+                Timber.e(it)
+                _errorResourceCode.value = R.string.error_get_profile
+            }.collect { result ->
                 when (result) {
                     is NetworkResult.Loading -> {
                         _isLoading.value = true
@@ -179,7 +195,10 @@ class ViewProjectViewModel @Inject constructor(
                 projectId = projectId,
                 freelancerId = freelancerId
             )
-            viewProjectDataManager.assignFreelancer(assignProjectDTO).collect { result ->
+            viewProjectDataManager.assignFreelancer(assignProjectDTO).catch {
+                Timber.e(it)
+                _errorResourceCode.value = R.string.error_accept_offer
+            }.collect { result ->
                 when (result) {
                     is NetworkResult.Loading -> {
                         _isLoading.value = true
@@ -200,9 +219,12 @@ class ViewProjectViewModel @Inject constructor(
         }
     }
 
-    fun viewFreelancerProfile(freelancerId: String) {
+    fun viewProfile(userId: String) {
         viewModelScope.launch {
-            viewProjectDataManager.getProfile(freelancerId).collect { result ->
+            viewProjectDataManager.getProfile(userId).catch {
+                Timber.e(it)
+                _errorResourceCode.value = R.string.error_get_profile
+            }.collect { result ->
                 when (result) {
                     is NetworkResult.Loading -> {
                         _isLoading.value = true
@@ -210,7 +232,7 @@ class ViewProjectViewModel @Inject constructor(
 
                     is NetworkResult.Success -> {
                         _isLoading.value = false
-                        _viewFreelancerProfileState.value = result.data
+                        _viewProfileState.value = result.data
                     }
 
                     is NetworkResult.Error -> {
@@ -222,13 +244,20 @@ class ViewProjectViewModel @Inject constructor(
     }
 
     fun submitOffer(offer: Offer, projectId: String) {
+        if (offer.budget == 0.0 || offer.description.isBlank()) {
+            _errorResourceCode.value = R.string.error_empty_fields
+            return
+        }
         viewModelScope.launch {
             val submitOfferDTO = SubmitOfferDTO(
                 budget = offer.budget,
                 description = offer.description,
                 projectId = projectId
             )
-            viewProjectDataManager.submitOffer(submitOfferDTO).collect { result ->
+            viewProjectDataManager.submitOffer(submitOfferDTO).catch {
+                Timber.e(it)
+                _errorResourceCode.value = R.string.error_sending_offer
+            }.collect { result ->
                 when (result) {
                     is NetworkResult.Loading -> {
                         _isLoading.value = true
@@ -239,6 +268,7 @@ class ViewProjectViewModel @Inject constructor(
                         _viewProjectState.value = _viewProjectState.value.copy(
                             project = result.data
                         )
+                        _offerSubmitted.value = offer
                     }
 
                     is NetworkResult.Error -> {
@@ -249,13 +279,12 @@ class ViewProjectViewModel @Inject constructor(
         }
     }
 
-    fun resetViewFreelancerProfileState() {
-        _viewFreelancerProfileState.value = null
-    }
-
     fun finishProject(id: String) {
         viewModelScope.launch {
-            viewProjectDataManager.finishProject(id).collect { result ->
+            viewProjectDataManager.finishProject(id).catch {
+                Timber.e(it)
+                _errorResourceCode.value = R.string.error_finish_project
+            }.collect { result ->
                 when (result) {
                     is NetworkResult.Loading -> {
                         _isLoading.value = true
@@ -278,5 +307,13 @@ class ViewProjectViewModel @Inject constructor(
 
     fun createOrObtainCIDOfChannelByUserId(userId: String) {
         createOrObtainCIDOfChannelByMembers(userId, chatClient.getCurrentUser()!!.id)
+    }
+
+    fun resetViewProfileState() {
+        _viewProfileState.value = null
+    }
+
+    fun resetOfferSubmitted() {
+        _offerSubmitted.value = null
     }
 }

@@ -60,7 +60,7 @@ class SpringBootAuthInterceptor @Inject constructor(
         try {
             token = tokenCompletableFuture.get()
         } catch (e: Exception) {
-            // If the token could not be retrieved, return the original request
+            // If the token could not be retrieved, return the response to the original request
             Timber.e(e.message, e)
             return chain.proceed(original)
         }
@@ -73,9 +73,10 @@ class SpringBootAuthInterceptor @Inject constructor(
             .addHeader("Authorization", "Bearer $token")
         val authResponse = chain.proceed(authRequest.build())
 
-        //Get the session cookie from the response and save it in the shared preferences
+        // Get the session cookie from the response and save it in the shared preferences if the cookie
+        // is not found then returns the response to the original request
         val cookies = authResponse.headers("Set-Cookie")
-        val sessionCookie = cookies.firstOrNull { it.contains("session") } ?: return authResponse
+        val sessionCookie = cookies.firstOrNull { it.contains("session") } ?: return chain.proceed(original)
 
         // Save the session cookie in the shared preferences
         encryptedSharedPreferencesManager.set("sessionCookie", sessionCookie)

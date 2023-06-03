@@ -119,7 +119,7 @@
     <string name="profile_description">Description</string>
     <string name="profile_skills">Skills</string>
     <string name="profile_description_label">Description: </string>
-    <string name="error_viewing_profile">The user has deactivated its freelancer profile</string>
+    <string name="error_viewing_profile">The user has no profile active</string>
     <string name="close">Close</string>
     <string name="open_chat">Open chat</string>
     <string name="submit_budget">Budget (€): </string>
@@ -148,11 +148,11 @@
     <string name="yes_button">Yes</string>
     <string name="no_button">No</string>
 
-    <string name="logout_exit_title">Logout and exit</string>
-    <string name="logout_exit_message">Are you sure you want to logout and exit app?</string>
+    <string name="logout_exit_title">Logout</string>
+    <string name="logout_exit_message">Are you sure you want to logout?</string>
 
     <string name="logout_everywhere_title">Logout everywhere</string>
-    <string name="logout_everywhere_message">Are you sure you want to logout everywhere and exit the app?</string>
+    <string name="logout_everywhere_message">Are you sure you want to logout everywhere?</string>
     <string name="login">Login</string>
     <string name="forgot_password">Forgot password</string>
     <string name="change_password">Change password</string>
@@ -182,4 +182,11 @@
     <string name="notification_permission_granted">Notifications permission granted</string>
     <string name="notification_permission_denied">Notification permission denied</string>
     <string name="default_notification_channel_id">Notifications</string>
+    <string name="display_filters">Display Filters</string>
+    <string name="budget_must_be_number">Budget must be a number</string>
+    <string name="offer_submitted">Offer submitted</string>
+    <string name="error_get_profile">Error getting profile</string>
+    <string name="error_sending_offer">Error sending offer</string>
+    <string name="error_accept_offer">Error acepting offer</string>
+    <string name="error_finish_project">Error project not finished</string>
 </resources>
