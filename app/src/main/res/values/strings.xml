@@ -189,4 +189,16 @@
     <string name="error_sending_offer">Error sending offer</string>
     <string name="error_accept_offer">Error acepting offer</string>
     <string name="error_finish_project">Error project not finished</string>
+    <string name="full_time">Full time</string>
+    <string name="part_time">Part time</string>
+    <string name="unavailable">Unavailable</string>
+    <string name="pending">Pending</string>
+    <string name="accepted">Accepted</string>
+    <string name="rejected">Rejected</string>
+    <string name="open">Open</string>
+    <string name="finished">Finished</string>
+    <string name="in_progress">In progress</string>
+    <string name="freelancer">Freelancer</string>
+    <string name="client">Client</string>
+    <string name="verify_phone">Verify phone</string>
 </resources>

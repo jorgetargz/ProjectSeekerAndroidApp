@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.jorgetargz.projectseeker.network.commom.NetworkResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import timber.log.Timber
 
 open class BaseViewModel : ViewModel() {
 
@@ -23,8 +24,10 @@ open class BaseViewModel : ViewModel() {
         _isLoading.value = false
         if (it.springErrorDTO != null) {
             _errorString.value = it.springErrorDTO.message
+            Timber.e(it.springErrorDTO.message)
         } else {
             _errorString.value = it.message
+            Timber.e(it.message)
         }
     }
 

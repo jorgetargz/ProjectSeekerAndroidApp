@@ -218,14 +218,17 @@ class ViewProjectFragment : BaseFragment() {
         with(binding) {
             if (profile.activeRole == ActiveRole.FREELANCER && project.clientId != profile.id) {
                 btnChatWithClient.visibility = View.VISIBLE
-                btnSubmitOffer.visibility = View.VISIBLE
-                btnSubmitOffer.setOnClickListener {
-                    showSubmitOfferDialog(project.id, profile.id)
+                if (project.status == ProjectStatus.OPEN) {
+                    btnSubmitOffer.visibility = View.VISIBLE
+                    btnSubmitOffer.setOnClickListener {
+                        showSubmitOfferDialog(project.id, profile.id)
+                    }
                 }
-            }
-            val offerSubmitted = project.offers.firstOrNull { offer -> offer.freelancerId == profile.id }
-            offerSubmitted?.let {
-                showOfferDialog(offerSubmitted)
+                val offerSubmitted =
+                    project.offers.firstOrNull { offer -> offer.freelancerId == profile.id }
+                offerSubmitted?.let {
+                    showOfferDialog(offerSubmitted)
+                }
             }
         }
     }

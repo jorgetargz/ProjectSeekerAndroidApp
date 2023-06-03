@@ -36,16 +36,9 @@ class ProfileFragment : BaseFragment() {
         FragmentProfileBinding.inflate(layoutInflater)
     }
 
-    private val availabilityOptions = arrayListOf(
-        Availability.FULL_TIME,
-        Availability.PART_TIME,
-        Availability.UNAVAILABLE
-    )
+    private lateinit var availabilityOptions: List<String>
 
-    private val activeRoleOptions = arrayListOf(
-        ActiveRole.CLIENT,
-        ActiveRole.FREELANCER
-    )
+    private lateinit var activeRoleOptions: List<String>
 
     private val imgResult = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -82,12 +75,26 @@ class ProfileFragment : BaseFragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        setupLists()
         setupSkillsAdapter()
         setupAvailabilitySpinner()
         setupUpdateProfileButton()
         observeViewModel()
         viewModel.getMyProfile()
         return binding.root
+    }
+
+    private fun setupLists() {
+        availabilityOptions = arrayListOf(
+            getString(Availability.FULL_TIME.getStringResourceCode()),
+            getString(Availability.PART_TIME.getStringResourceCode()),
+            getString(Availability.UNAVAILABLE.getStringResourceCode())
+        )
+
+        activeRoleOptions = arrayListOf(
+            getString(ActiveRole.CLIENT.getStringResourceCode()),
+            getString(ActiveRole.FREELANCER.getStringResourceCode())
+        )
     }
 
     private fun checkIfEmailIsVerified() {
@@ -98,11 +105,12 @@ class ProfileFragment : BaseFragment() {
         binding.updateProfileButton.setOnClickListener {
             val title = binding.titleEditText.text.toString()
             val description = binding.descriptionEditText.text.toString()
-            if (binding.activeRole.selectedItem == ActiveRole.FREELANCER) {
-                val availability = binding.availability.selectedItem as Availability
+            if (binding.activeRole.selectedItem == getString(ActiveRole.FREELANCER.getStringResourceCode())) {
+                val availability =
+                    Availability.fromString(binding.availability.selectedItem as String)
                 val skills = adapter.currentList
                 viewModel.updateFreelancerProfile(availability, skills, title, description)
-            } else if (binding.activeRole.selectedItem == ActiveRole.CLIENT) {
+            } else if (binding.activeRole.selectedItem == getString(ActiveRole.CLIENT.getStringResourceCode())) {
                 viewModel.updateClientProfile(title, description)
             }
         }
@@ -183,7 +191,7 @@ class ProfileFragment : BaseFragment() {
                 }
 
                 is Profile.Freelancer -> {
-                    availability.setSelection(availabilityOptions.indexOf(profile.availability))
+                    availability.setSelection(availabilityOptions.indexOf(getString(profile.availability.getStringResourceCode())))
                     adapter.submitList(profile.skills)
                     setupAddSkillButton()
 
@@ -278,7 +286,7 @@ class ProfileFragment : BaseFragment() {
     private fun setupActiveRoleSpinner(profile: Profile) {
         val adapter = ArrayAdapter(requireContext(), R.layout.dropdown_item, activeRoleOptions)
         binding.activeRole.adapter = adapter
-        binding.activeRole.setSelection(activeRoleOptions.indexOf(profile.activeRole))
+        binding.activeRole.setSelection(activeRoleOptions.indexOf(getString(profile.activeRole.getStringResourceCode())))
 
         binding.activeRole.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
@@ -304,8 +312,8 @@ class ProfileFragment : BaseFragment() {
                     binding.addSkillButton.visibility = View.VISIBLE
                     binding.updateProfileButton.setText(R.string.update_profile_freelancer)
                 }
-                if (profile.activeRole != activeRoleOptions[position]) {
-                    viewModel.setActiveRole(activeRoleOptions[position])
+                if (getString(profile.activeRole.getStringResourceCode()) != activeRoleOptions[position]) {
+                    viewModel.setActiveRole(ActiveRole.fromString(activeRoleOptions[position]))
                 }
             }
 

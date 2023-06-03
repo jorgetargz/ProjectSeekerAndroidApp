@@ -26,50 +26,54 @@ class MainViewModel @Inject constructor(
 ) : BaseViewModel() {
 
     private val _logoutDone = MutableStateFlow(false)
-    val logoutDone : StateFlow<Boolean> = _logoutDone
+    val logoutDone: StateFlow<Boolean> = _logoutDone
 
     private val _numberOfUnreadMessages = MutableStateFlow(0)
-    val numberOfUnreadMessages : StateFlow<Int> = _numberOfUnreadMessages
+    val numberOfUnreadMessages: StateFlow<Int> = _numberOfUnreadMessages
 
     fun logout() {
-        chatClient.disconnect(true).enqueue {
-            logChatClientLogOut(it)
-            firebaseAuth.signOut()
-            encryptedSharedPreferencesManager.clear()
+        viewModelScope.launch {
+            chatClient.disconnect(true).enqueue {
+                logChatClientLogOut(it)
+                firebaseAuth.signOut()
+                encryptedSharedPreferencesManager.clear()
+            }
             _logoutDone.value = true
         }
     }
 
     fun logoutEverywhere() {
         _isLoading.value = true
-        chatClient.disconnect(false).enqueue { it ->
-            logChatClientLogOut(it)
-            firebaseAuth.signOut()
-            encryptedSharedPreferencesManager.clear()
-            viewModelScope.launch {
-                springSessionRemoteSource.logoutEverywhere().catch { e ->
-                    _logoutDone.value = true
-                    _isLoading.value = false
-                    Timber.e(e.message, e)
-                }.collect { networkResult ->
-                    when (networkResult) {
-                        is NetworkResult.Loading -> {
-                            _isLoading.value = true
-                        }
+        viewModelScope.launch {
+            chatClient.disconnect(true).enqueue {
+                logChatClientLogOut(it)
+                firebaseAuth.signOut()
+                encryptedSharedPreferencesManager.clear()
+            }
 
-                        is NetworkResult.Success -> {
-                            _logoutDone.value = true
-                            _isLoading.value = false
-                        }
+            springSessionRemoteSource.logoutEverywhere().catch { e ->
+                _isLoading.value = false
+                Timber.e(e.message, e)
+            }.collect { networkResult ->
+                when (networkResult) {
+                    is NetworkResult.Loading -> {
+                        _isLoading.value = true
+                    }
 
-                        is NetworkResult.Error -> {
-                            handleNetworkError(networkResult)
-                        }
+                    is NetworkResult.Success -> {
+                        _isLoading.value = false
+                    }
+
+                    is NetworkResult.Error -> {
+                        handleNetworkError(networkResult)
                     }
                 }
             }
         }
+        _isLoading.value = false
+        _logoutDone.value = true
     }
+
 
     private fun logChatClientLogOut(it: Result<Unit>) {
         if (it.isSuccess) {

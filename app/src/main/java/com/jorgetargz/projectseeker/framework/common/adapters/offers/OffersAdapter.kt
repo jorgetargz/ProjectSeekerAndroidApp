@@ -40,7 +40,7 @@ class OffersAdapter(
         fun bind(item: Offer) = with(binding) {
             tvDescription.text = item.description
             tvBudget.text = item.budget.toString()
-            tvOfferStatus.text = item.status.toString()
+            tvOfferStatus.text = itemView.context.getString(item.status.getStringResourceCode())
 
             btnViewProfile.setOnClickListener {
                 offersActions.onViewProfile(item.freelancerId)

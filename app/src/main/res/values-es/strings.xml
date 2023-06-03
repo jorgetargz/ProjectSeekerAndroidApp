@@ -3,7 +3,7 @@
     <string name="google_login">Continuar con Google</string>
     <string name="mail_login">Continuar con correo electrónico</string>
     <string name="phone_login">Continuar con el teléfono</string>
-    <string name="register_new_user">Inscribirse</string>
+    <string name="register_new_user">Registrarme</string>
     <string name="login_with_email">Iniciar sesión con correo electrónico</string>
     <string name="login_with_phone">Iniciar sesión con el teléfono</string>
     <string name="invalid_code">Código no válido o caducado</string>
@@ -127,7 +127,7 @@
     <string name="full_name">Nombre completo</string>
     <string name="email">Email</string>
     <string name="phone">Telefono</string>
-    <string name="send_sms_code">Fecha de inicio:</string>
+    <string name="send_sms_code">Enviar SMS</string>
     <string name="sms_code">Codigo SMS</string>
     <string name="password">Contraseña</string>
     <string name="confirm_password">Confirmar contraseña</string>
@@ -181,4 +181,20 @@
     <string name="display_filters">Ver Filtros</string>
     <string name="budget_must_be_number">Presupuesto ha de ser numero</string>
     <string name="offer_submitted">Propuesta enviada</string>
+    <string name="error_get_profile">Error al obtner perfil</string>
+    <string name="error_sending_offer">Error al enviar oferta</string>
+    <string name="error_accept_offer">Error al aceptar oferta</string>
+    <string name="error_finish_project">Error proyecto no acabado</string>
+    <string name="full_time">Tiempo completo</string>
+    <string name="part_time">Media jornada</string>
+    <string name="unavailable">No disponible</string>
+    <string name="pending">Pendiente</string>
+    <string name="accepted">Aceptada</string>
+    <string name="rejected">Rechazada</string>
+    <string name="open">Abierto</string>
+    <string name="finished">Acabado</string>
+    <string name="in_progress">En progreso</string>
+    <string name="freelancer">Freelancer</string>a
+    <string name="client">Cliente</string>
+    <string name="verify_phone">Verificar telefono</string>
 </resources>

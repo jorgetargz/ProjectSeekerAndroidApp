@@ -257,14 +257,14 @@ class LoginFragment() : BaseAuthFragment() {
 
             MaterialAlertDialogBuilder(requireContext()).apply {
                 setView(dialogView)
-                setPositiveButton("Send code") { dialog1, _ ->
+                setPositiveButton(getString(R.string.send_sms_code)) { dialog1, _ ->
                     val dialog = dialog1 as Dialog
                     phone = ccp.selectedCountryCodeWithPlus +
                             dialog.findViewById<TextInputEditText>(R.id.etPhone).text.toString()
 
                     sendVerificationCode()
                 }
-                setNegativeButton("Cancel") { dialog, _ ->
+                setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
                     dialog.dismiss()
                 }
                 show()
@@ -283,17 +283,17 @@ class LoginFragment() : BaseAuthFragment() {
 
         MaterialAlertDialogBuilder(binding.root.context)
             .setView(dialogView)
-            .setPositiveButton("Verify code") { _, _ ->
+            .setPositiveButton(getString(R.string.verify_phone)) { _, _ ->
                 val credential = PhoneAuthProvider.getCredential(
                     verificationId,
                     etCode.text.toString()
                 )
                 viewModel.firebaseAuthWithPhoneAuthCredential(credential)
             }
-            .setNeutralButton("Resend code") { _, _ ->
+            .setNeutralButton(getString(R.string.resend_code)) { _, _ ->
                 resendVerificationCode(token)
             }
-            .setNegativeButton("Cancel") { dialog, _ ->
+            .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
                 dialog.dismiss()
             }
             .show()

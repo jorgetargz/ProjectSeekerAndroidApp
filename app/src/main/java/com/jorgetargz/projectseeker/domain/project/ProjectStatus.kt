@@ -1,5 +1,7 @@
 package com.jorgetargz.projectseeker.domain.project
 
+import com.jorgetargz.projectseeker.R
+
 enum class ProjectStatus {
     OPEN, FINISHED, IN_PROGRESS;
 
@@ -8,6 +10,14 @@ enum class ProjectStatus {
             OPEN -> "Open"
             FINISHED -> "Finished"
             IN_PROGRESS -> "In progress"
+        }
+    }
+
+    fun getStringResourceCode(): Int {
+        return when (this) {
+            OPEN -> R.string.open
+            FINISHED -> R.string.finished
+            IN_PROGRESS -> R.string.in_progress
         }
     }
 

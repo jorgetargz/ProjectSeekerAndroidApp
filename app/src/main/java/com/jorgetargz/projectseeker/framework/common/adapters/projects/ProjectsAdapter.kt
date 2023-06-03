@@ -54,8 +54,11 @@ class ProjectsAdapter(
                 is Profile.Freelancer -> {
                     binding.tvOfferStatusLabel.visibility = View.VISIBLE
                     binding.tvOfferStatus.visibility = View.VISIBLE
-                    val offerStatus = item.offers.firstOrNull { it.freelancerId == profile.id }?.status
-                    binding.tvOfferStatus.text = offerStatus?.toString() ?: "No offer"
+                    val offerStatus =
+                        item.offers.firstOrNull { it.freelancerId == profile.id }?.status
+                    binding.tvOfferStatus.text = offerStatus?.getStringResourceCode()?.let {
+                        itemView.context.getString(it)
+                    } ?: "No offer"
                 }
 
                 is Profile.Client -> {

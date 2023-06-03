@@ -1,5 +1,7 @@
 package com.jorgetargz.projectseeker.domain.project
 
+import com.jorgetargz.projectseeker.R
+
 enum class OfferStatus {
     PENDING, ACCEPTED, REJECTED;
 
@@ -8,6 +10,14 @@ enum class OfferStatus {
             PENDING -> "Pending"
             ACCEPTED -> "Accepted"
             REJECTED -> "Rejected"
+        }
+    }
+
+    fun getStringResourceCode(): Int {
+        return when (this) {
+            PENDING -> R.string.pending
+            ACCEPTED -> R.string.accepted
+            REJECTED -> R.string.rejected
         }
     }
 
