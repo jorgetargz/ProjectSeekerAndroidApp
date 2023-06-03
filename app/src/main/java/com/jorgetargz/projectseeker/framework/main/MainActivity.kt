@@ -48,8 +48,11 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.logoutDone.collect { logOutDone ->
-                    if (logOutDone) {
-                        navController.popBackStack(R.id.loginFragment, false)
+                    logOutDone?.let {
+                        if (logOutDone) {
+                            navController.navigate(R.id.loginFragment)
+                            viewModel.logoutDoneHandled()
+                        }
                     }
                 }
             }

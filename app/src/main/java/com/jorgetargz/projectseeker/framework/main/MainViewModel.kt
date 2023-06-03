@@ -2,13 +2,11 @@ package com.jorgetargz.projectseeker.framework.main
 
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
-import com.jorgetargz.projectseeker.data.shared_preferences.EncryptedSharedPreferencesManager
 import com.jorgetargz.projectseeker.framework.common.BaseViewModel
 import com.jorgetargz.projectseeker.network.commom.NetworkResult
 import com.jorgetargz.projectseeker.network.session.SpringSessionRemoteSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.getstream.chat.android.client.ChatClient
-import io.getstream.chat.android.client.utils.Result
 import io.getstream.chat.android.offline.extensions.globalState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,22 +20,17 @@ class MainViewModel @Inject constructor(
     private val chatClient: ChatClient,
     private val firebaseAuth: FirebaseAuth,
     private val springSessionRemoteSource: SpringSessionRemoteSource,
-    private val encryptedSharedPreferencesManager: EncryptedSharedPreferencesManager
 ) : BaseViewModel() {
 
-    private val _logoutDone = MutableStateFlow(false)
-    val logoutDone: StateFlow<Boolean> = _logoutDone
+    private val _logoutDone = MutableStateFlow<Boolean?>(null)
+    val logoutDone: StateFlow<Boolean?> = _logoutDone
 
     private val _numberOfUnreadMessages = MutableStateFlow(0)
     val numberOfUnreadMessages: StateFlow<Int> = _numberOfUnreadMessages
 
     fun logout() {
         viewModelScope.launch {
-            chatClient.disconnect(true).enqueue {
-                logChatClientLogOut(it)
-                firebaseAuth.signOut()
-                encryptedSharedPreferencesManager.clear()
-            }
+            firebaseAuth.signOut()
             _logoutDone.value = true
         }
     }
@@ -45,12 +38,7 @@ class MainViewModel @Inject constructor(
     fun logoutEverywhere() {
         _isLoading.value = true
         viewModelScope.launch {
-            chatClient.disconnect(true).enqueue {
-                logChatClientLogOut(it)
-                firebaseAuth.signOut()
-                encryptedSharedPreferencesManager.clear()
-            }
-
+            firebaseAuth.signOut()
             springSessionRemoteSource.logoutEverywhere().catch { e ->
                 _isLoading.value = false
                 Timber.e(e.message, e)
@@ -70,17 +58,8 @@ class MainViewModel @Inject constructor(
                 }
             }
         }
-        _isLoading.value = false
         _logoutDone.value = true
-    }
-
-
-    private fun logChatClientLogOut(it: Result<Unit>) {
-        if (it.isSuccess) {
-            Timber.d("Successfully disconnected from Stream chat")
-        } else {
-            Timber.d("Failed to disconnect from Stream chat")
-        }
+        _isLoading.value = false
     }
 
     fun checkNumberOfUnReadMessages() {
@@ -89,5 +68,9 @@ class MainViewModel @Inject constructor(
                 _numberOfUnreadMessages.value = it
             }
         }
+    }
+
+    fun logoutDoneHandled() {
+        _logoutDone.value = null
     }
 }
